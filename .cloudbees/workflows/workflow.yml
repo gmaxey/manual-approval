@@ -1,0 +1,42 @@
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: workflow
+name: manual-approval
+
+on:
+  push:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+jobs:
+  testManualApproval:
+    steps:
+    - id: beforeManualApproval
+      name: Before manual approval
+      uses: docker://alpine:latest
+      run: |
+        echo "Before manual approval"
+
+    - id: approve-promotion
+      name: Approve promotion
+      delegates: ./custom-job.yml@v1
+      with:
+        # for users either user email or userId can be provided
+        approvers: SREs-team,user@email.com,1a17b9ba-a9aa-4dea-9348-e035223e5865
+        instruction: Ready to promote to production?
+        disallowLaunchByUser: true 
+    
+    approve-promotion:
+    delegates: cloudbees-io/manual-approval/custom-job.yml@v1
+    with:
+      # for users either user email or userId can be provided
+      approvers: SREs-team,user@email.com,1a17b9ba-a9aa-4dea-9348-e035223e5865
+      instruction: Ready to promote to production?
+      disallowLaunchByUser: true 
+      
+    - id: afterManualApproval
+      name: After manual approval
+      needs: approve-promotion
+      uses: docker://alpine:latest
+      run: |
+        echo "After manual approval"
