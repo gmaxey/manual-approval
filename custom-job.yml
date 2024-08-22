@@ -22,7 +22,7 @@ handler:
   
   init:
     command: |
-      # Make Platform API call to post workflow evidence item
+      # Make Platform API call to create workflow manual approval
       response=$(curl --fail-with-body  -X 'POST' "$URL/v1/workflows/approval" -H "Authorization: Bearer $JWT" -H 'Content-Type: application/json' --data-binary '{"approvers": "'"$APPROVERS"'", "instruction": "'"$INSTRUCTION"'", "disallowLaunchByUser": "'"$DISALLOW_LAUNCHED_BY_USER"'"}') || command_failed=1
       
       # Check curl exit code
@@ -40,7 +40,7 @@ handler:
 
   callback:
     command: |
-      # Make Platform API call to post workflow evidence item
+      # Make Platform API call to change workflow manual approval status
       response=$(curl --fail-with-body  -X 'POST' "$URL/v1/workflows/approval/status" -H "Authorization: Bearer $JWT" -H 'Content-Type: application/json' --data-binary '{"status": "UPDATE_MANUAL_APPROVAL_STATUS_APPROVED", "responded_on": "2024-08-21T01:23:45Z", "user_id": "00000000-0000-0000-0000-000000000000", "comments": "Some optional comments"}') || command_failed=1
       
       # Check curl exit code
@@ -57,7 +57,7 @@ handler:
   cancel:
     #to abort pending approval request in case of timeout or workflow abort event. 
     command: |
-      # Make Platform API call to post workflow evidence item
+      # Make Platform API call to change workflow manual approval status
       response=$(curl --fail-with-body  -X 'POST' "$URL/v1/workflows/approval/status" -H "Authorization: Bearer $JWT" -H 'Content-Type: application/json' --data-binary '{"status": "UPDATE_MANUAL_APPROVAL_STATUS_REJECTED", "responded_on": "2024-08-21T01:23:45Z", "user_id": "00000000-0000-0000-0000-000000000000", "comments": "Some optional comments"}') || command_failed=1
       
       # Check curl exit code
