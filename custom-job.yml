@@ -102,8 +102,8 @@ handler:
 
       # Save success
       echo '{    
-        "status": "SUCCEEDED",
-        "message": "Successfully changed workflow manual approval status based on '$CANCELLATION_REASON'"
+        "status": "$CANCELLATION_REASON",
+        "message": "Successfully changed workflow manual approval status to '$CANCELLATION_REASON'"
       }' > $CLOUDBEES_CUSTOM_JOB_STATUS
     env: 
       API_TOKEN: ${{ cloudbees.api.token }}
