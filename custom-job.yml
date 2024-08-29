@@ -54,7 +54,7 @@ handler:
   callback:
     command: |
       # Make Platform API call to change workflow manual approval status
-      response=$(curl --fail-with-body  -X 'POST' "$URL/v1/workflows/approval/status" -H "Authorization: Bearer $JWT" -H 'Content-Type: application/json' --data-binary 'PAYLOAD') || command_failed=1
+      response=$(curl --fail-with-body  -X 'POST' "$URL/v1/workflows/approval/status" -H "Authorization: Bearer $JWT" -H 'Content-Type: application/json' --data-binary "$PAYLOAD") || command_failed=1
       
       # Check curl exit code
       if [ ${command_failed:-0} -eq 1 ];
