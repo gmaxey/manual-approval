@@ -53,6 +53,9 @@ handler:
 
   callback:
     command: |
+      # Extract status field value from the payload in JSON format
+      EXTRACTED_STATUS=$(echo "$PAYLOAD" | grep -oP '(?<="status": ")[^"]*')
+      
       # Make Platform API call to change workflow manual approval status
       response=$(curl --fail-with-body  -X 'POST' "$URL/v1/workflows/approval/status" -H "Authorization: Bearer $JWT" -H 'Content-Type: application/json' --data-binary "$PAYLOAD") || command_failed=1
       
@@ -72,7 +75,7 @@ handler:
 
       # Save success
       echo '{    
-        "status": "SUCCEEDED",
+        "status": "$EXTRACTED_STATUS",
         "message": "Successfully changed workflow manual approval status based on '$PAYLOAD'"
       }' > $CLOUDBEES_CUSTOM_JOB_STATUS
     env: 
