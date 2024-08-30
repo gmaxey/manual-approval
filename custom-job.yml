@@ -1,5 +1,5 @@
 apiVersion: automation.cloudbees.io/v1alpha1
-kind: custom-job
+kind: CustomJob
 name: manual approval
 description: Request manual approval from users and teams
 
