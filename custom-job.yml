@@ -15,7 +15,6 @@ inputs:
     required: false
 
 handlers: 
-
   init:
     uses: docker://alpine:latest
     command: |
