@@ -14,10 +14,10 @@ inputs:
     description: For separation of responsibilities, if true, then the user who launched the workflow is not allowed to approve.
     required: false
 
-handler: 
-  uses: docker://alpine:latest
-  
+handlers: 
+
   init:
+    uses: docker://alpine:latest
     command: |
       # Make Platform API call to create workflow manual approval
       response=$(curl --fail-with-body  -X 'POST' "$URL/v1/workflows/approval" -H "Authorization: Bearer $JWT" -H 'Content-Type: application/json' --data-binary '{"approvers": "'"$APPROVERS"'", "instruction": "'"$INSTRUCTION"'", "disallowLaunchByUser": "'"$DISALLOW_LAUNCHED_BY_USER"'"}') || command_failed=1
@@ -49,6 +49,7 @@ handler:
       URL: ${{ cloudbees.api.url }}
 
   callback:
+    uses: docker://alpine:latest
     command: |
       # Extract status field value from the payload in JSON format
       EXTRACTED_STATUS=$(echo "$PAYLOAD" | grep -oP '(?<="status": ")[^"]*')
@@ -81,6 +82,7 @@ handler:
       PAYLOAD: ${{ handler.callback.payload }}
   
   cancel:
+    uses: docker://alpine:latest
     #to abort pending approval request in case of timeout or workflow abort event. 
     command: |
       # Make Platform API call to change workflow manual approval status
