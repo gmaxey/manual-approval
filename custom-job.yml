@@ -7,15 +7,12 @@ inputs:
   approvers:
     description: Comma separated list of approvers. Can be users or teams. If not specified, then all users who have execute permission for approval on the workflow can approve.
     required: false
-    type: string
   instruction:
     description: Text to display in the approval prompt
     required: true
-    type: string
   disallowLaunchByUser:
     description: For separation of responsibilities, if true, then the user who launched the workflow is not allowed to approve.
     required: false
-    type: boolean
 
 handler: 
   uses: docker://alpine:latest
