@@ -78,7 +78,7 @@ handlers:
     env: 
       API_TOKEN: ${{ cloudbees.api.token }}
       URL: ${{ cloudbees.api.url }}
-      PAYLOAD: ${{ handler.callback.payload }}
+      PAYLOAD: ${{ handler.payload }}
   
   cancel:
     uses: docker://alpine:latest
@@ -92,21 +92,7 @@ handlers:
       then
         echo "Platform API call failed with error: '$response'"
 
-        # Save failure
-        echo '{    
-          "status": "FAILED",
-          "message": "Failed to change workflow manual approval status with error: '$response'"
-        }' > $CLOUDBEES_CUSTOM_JOB_STATUS
-      
-        exit 1
-      fi
-
-      # Save success
-      echo '{    
-        "status": "$CANCELLATION_REASON",
-        "message": "Successfully changed workflow manual approval status to '$CANCELLATION_REASON'"
-      }' > $CLOUDBEES_CUSTOM_JOB_STATUS
-    env: 
+    env:
       API_TOKEN: ${{ cloudbees.api.token }}
       URL: ${{ cloudbees.api.url }}
-      CANCELLATION_REASON: ${{ handler.cancel.reason }}
+      CANCELLATION_REASON: ${{ handler.reason }}
