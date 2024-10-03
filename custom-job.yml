@@ -30,7 +30,7 @@ handlers:
         echo '{    
           "status": "FAILED",
           "message": "Failed to initialize workflow manual approval with error: '$response'"
-        }' > $CLOUDBEES_CUSTOM_JOB_STATUS
+        }' > $CLOUDBEES_STATUS
       
         exit 1
       fi
@@ -39,7 +39,7 @@ handlers:
       echo '{    
         "status": "PENDING_APPROVAL",
         "message": "Waiting for approval from approvers" 
-      }' > $CLOUDBEES_CUSTOM_JOB_STATUS
+      }' > $CLOUDBEES_STATUS
     env: 
       APPROVERS: ${{inputs.approvers}}
       INSTRUCTION: ${{inputs.instruction}}
@@ -65,7 +65,7 @@ handlers:
         echo '{    
           "status": "FAILED",
           "message": "Failed to change workflow manual approval status with error: '$response'"
-        }' > $CLOUDBEES_CUSTOM_JOB_STATUS
+        }' > $CLOUDBEES_STATUS
       
         exit 1
       fi
@@ -74,7 +74,7 @@ handlers:
       echo '{    
         "status": "$EXTRACTED_STATUS",
         "message": "Successfully changed workflow manual approval status based on '$CUSTOMJOBTASK_CALLBACK_PAYLOAD'"
-      }' > $CLOUDBEES_CUSTOM_JOB_STATUS
+      }' > $CLOUDBEES_STATUS
     env: 
       API_TOKEN: ${{ cloudbees.api.token }}
       URL: ${{ cloudbees.api.url }}
