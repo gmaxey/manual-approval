@@ -14,22 +14,24 @@ inputs:
     description: For separation of responsibilities, if true, then the user who launched the workflow is not allowed to approve.
     required: false
 
-handlers: 
+handlers:
   init:
-    uses: docker://alpine:latest
-    command: |
+    uses: docker://alpine/curl:latest
+    command: /bin/sh
+    args: |
+      -c "
       # Make Platform API call to create workflow manual approval
-      response=$(curl --fail-with-body  -X 'POST' "$URL/v1/workflows/approval" -H "Authorization: Bearer $JWT" -H 'Content-Type: application/json' --data-binary '{"approvers": "'"$APPROVERS"'", "instruction": "'"$INSTRUCTION"'", "disallowLaunchByUser": "'"$DISALLOW_LAUNCHED_BY_USER"'"}') || command_failed=1
+      response=$(curl --fail-with-body  -X POST \"$URL/v1/workflows/approval\" -H \"Authorization: Bearer $API_TOKEN\" -H 'Content-Type: application/json' -d '{\"instruction\": \"'\"$INSTRUCTION\"'\", \"approvers\": [\"'$APPROVERS'\"], \"disallowLaunchByUser\": '${DISALLOW_LAUNCHED_BY_USER:-false}' }') || command_failed=1
       
       # Check curl exit code
       if [ ${command_failed:-0} -eq 1 ];
       then
-        echo "Platform API call failed with error: '$response'"
-
+        echo \"Platform API call failed with error: '$response'\"
+        
         # Save failure
         echo '{    
-          "status": "FAILED",
-          "message": "Failed to initialize workflow manual approval with error: '$response'"
+          \"status\": \"FAILED\",
+          \"message\": \"Failed to initialize workflow manual approval with error: '$response'\"
         }' > $CLOUDBEES_STATUS
       
         exit 1
@@ -37,10 +39,11 @@ handlers:
 
       # Save success
       echo '{    
-        "status": "PENDING_APPROVAL",
-        "message": "Waiting for approval from approvers" 
+        \"status\": \"PENDING_APPROVAL\",
+        \"message\": \"Waiting for approval from approvers\" 
       }' > $CLOUDBEES_STATUS
-    env: 
+      "
+    env:
       APPROVERS: ${{inputs.approvers}}
       INSTRUCTION: ${{inputs.instruction}}
       DISALLOW_LAUNCHED_BY_USER: ${{inputs.disallowLaunchByUser}}
@@ -48,23 +51,25 @@ handlers:
       URL: ${{ cloudbees.api.url }}
 
   callback:
-    uses: docker://alpine:latest
-    command: |
+    uses: docker://alpine/curl:latest
+    command: /bin/sh
+    args: |
+      -c "
       # Extract status field value from the payload in JSON format
-      EXTRACTED_STATUS=$(echo "$PAYLOAD" | grep -oP '(?<="status": ")[^"]*')
+      EXTRACTED_STATUS=$(echo \"$PAYLOAD\" | grep -oP '(?<=\"status\": \")[^\"]*')
       
       # Make Platform API call to change workflow manual approval status
-      response=$(curl --fail-with-body  -X 'POST' "$URL/v1/workflows/approval/status" -H "Authorization: Bearer $JWT" -H 'Content-Type: application/json' --data-binary "$PAYLOAD") || command_failed=1
+      response=$(curl --fail-with-body  -X POST \"$URL/v1/workflows/approval/status\" -H \"Authorization: Bearer $API_TOKEN\" -H 'Content-Type: application/json' -d \"$PAYLOAD\") || command_failed=1
       
       # Check curl exit code
       if [ ${command_failed:-0} -eq 1 ];
       then
-        echo "Platform API call failed with error: '$response'"
+        echo \"Platform API call failed with error: '$response'\"
 
         # Save failure
         echo '{    
-          "status": "FAILED",
-          "message": "Failed to change workflow manual approval status with error: '$response'"
+          \"status\": \"FAILED\",
+          \"message\": \"Failed to change workflow manual approval status with error: '$response'\"
         }' > $CLOUDBEES_STATUS
       
         exit 1
@@ -72,26 +77,29 @@ handlers:
 
       # Save success
       echo '{    
-        "status": "$EXTRACTED_STATUS",
-        "message": "Successfully changed workflow manual approval status based on '$PAYLOAD'"
+        \"status\": \"$EXTRACTED_STATUS\",
+        \"message\": \"Successfully changed workflow manual approval status based on '$PAYLOAD'\"
       }' > $CLOUDBEES_STATUS
-    env: 
+      "
+    env:
       API_TOKEN: ${{ cloudbees.api.token }}
       URL: ${{ cloudbees.api.url }}
       PAYLOAD: ${{ handler.payload }}
-  
+
   cancel:
-    uses: docker://alpine:latest
-    #to abort pending approval request in case of timeout or workflow abort event. 
-    command: |
+    uses: docker://alpine/curl:latest
+    command: /bin/sh
+    #to abort pending approval request in case of timeout or workflow abort event.
+    args: |
+      -c "
       # Make Platform API call to change workflow manual approval status
-      response=$(curl --fail-with-body  -X 'POST' "$URL/v1/workflows/approval/status" -H "Authorization: Bearer $JWT" -H 'Content-Type: application/json' --data-binary '{"status": "'"$CANCELLATION_REASON"'"}') || command_failed=1
+      response=$(curl --fail-with-body  -X POST \"$URL/v1/workflows/approval/status\" -H \"Authorization: Bearer $API_TOKEN\" -H 'Content-Type: application/json' -d '{\"status\": \"$CANCELLATION_REASON\"}') || command_failed=1
       
       # Check curl exit code
       if [ ${command_failed:-0} -eq 1 ];
       then
-        echo "Platform API call failed with error: '$response'"
-
+        echo \"Platform API call failed with error: '$response'\"
+      "
     env:
       API_TOKEN: ${{ cloudbees.api.token }}
       URL: ${{ cloudbees.api.url }}
