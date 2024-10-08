@@ -20,9 +20,20 @@ handlers:
     command: /bin/sh
     args: |
       -c "
-      # Make Platform API call to create workflow manual approval
-      response=$(curl --fail-with-body  -X POST \"$URL/v1/workflows/approval\" -H \"Authorization: Bearer $API_TOKEN\" -H 'Content-Type: application/json' -d '{\"instruction\": \"'\"$INSTRUCTION\"'\", \"approvers\": [\"'$APPROVERS'\"], \"disallowLaunchByUser\": '${DISALLOW_LAUNCHED_BY_USER:-false}' }') || command_failed=1
-      
+      # Manual approval template
+      TEMPLATE='{"approvers": ($a | split(",")), "instruction": $i, "disallowLaunchByUser": $d}'
+
+      # Build valid JSON
+      JSON_PAYLOAD=$(/usr/bin/jq -n --arg a "$APPROVERS" --arg i "$INSTRUCTION" --argjson d "${DISALLOW_LAUNCHED_BY_USER:-false}" "$TEMPLATE")
+        
+      # To avoid issue 'argument list too long' use file
+      echo "$JSON_PAYLOAD" > /tmp/content.json
+
+      # Make Platform API call
+      response=$(curl --fail-with-body -X 'POST' "$URL/v1/workflows/approval" \
+        -H "Authorization: Bearer ${JWT}" -H 'Content-Type: application/json' -H 'Accept: application/json' \
+        --data-binary "@/tmp/content.json") || command_failed=1
+
       # Check curl exit code
       if [ ${command_failed:-0} -eq 1 ];
       then
