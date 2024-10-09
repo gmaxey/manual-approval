@@ -31,7 +31,7 @@ handlers:
 
       # Make Platform API call
       response=$(curl --fail-with-body -X 'POST' \"$URL/v1/workflows/approval\" \
-        -H \"Authorization: Bearer ${JWT}\" -H 'Content-Type: application/json' -H 'Accept: application/json' \
+        -H \"Authorization: Bearer ${API_TOKEN}\" -H 'Content-Type: application/json' -H 'Accept: application/json' \
         --data-binary \"@/tmp/content.json\") || command_failed=1
 
       # Check curl exit code
