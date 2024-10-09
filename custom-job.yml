@@ -88,7 +88,7 @@ handlers:
 
       # Save success
       echo '{    
-        \"status\": '\"$EXTRACTED_STATUS\"',
+        \"status\": '\\\"$EXTRACTED_STATUS\\\"',
         \"message\": \"Successfully changed workflow manual approval status\"
       }' > $CLOUDBEES_STATUS
       """
