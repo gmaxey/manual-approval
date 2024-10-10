@@ -30,7 +30,7 @@ handlers:
       echo \"$JSON_PAYLOAD\" > /tmp/content.json
 
       # Make Platform API call
-      response=$(curl --fail-with-body -X 'POST' \"$URL/v1/workflows/approval\" \
+      response=$(curl -s --fail-with-body -X 'POST' \"$URL/v1/workflows/approval\" \
         -H \"Authorization: Bearer ${API_TOKEN}\" -H 'Content-Type: application/json' -H 'Accept: application/json' \
         --data-binary \"@/tmp/content.json\") || command_failed=1
 
@@ -49,6 +49,16 @@ handlers:
       fi
 
       # Save success
+      if [ -z "$APPROVERS" ]; 
+      then
+        echo 'Waiting for approval'
+      else
+        echo 'Waiting for approval from one of the following: '$APPROVERS
+      fi
+      echo 'Instructions:'
+      echo $INSTRUCTION
+      echo 'Thanks!'
+      
       echo '{    
         \"status\": \"PENDING_APPROVAL\",
         \"message\": \"Waiting for approval from approvers\" 
@@ -71,7 +81,7 @@ handlers:
       COMMENTS=$(echo \"$PAYLOAD\" | /usr/bin/jq -r '.comments')
       
       # Make Platform API call to change workflow manual approval status
-      response=$(curl --fail-with-body  -X POST \"$URL/v1/workflows/approval/status\" -H \"Authorization: Bearer $API_TOKEN\" -H 'Content-Type: application/json' -d \"$PAYLOAD\") || command_failed=1
+      response=$(curl -s --fail-with-body  -X POST \"$URL/v1/workflows/approval/status\" -H \"Authorization: Bearer $API_TOKEN\" -H 'Content-Type: application/json' -d \"$PAYLOAD\") || command_failed=1
       
       # Check curl exit code
       if [ ${command_failed:-0} -eq 1 ];
@@ -115,7 +125,7 @@ handlers:
     args: |
       -c "
       # Make Platform API call to change workflow manual approval status
-      response=$(curl --fail-with-body  -X POST \"$URL/v1/workflows/approval/status\" -H \"Authorization: Bearer $API_TOKEN\" -H 'Content-Type: application/json' -d '{\"status\": \"$CANCELLATION_REASON\"}') || command_failed=1
+      response=$(curl -s --fail-with-body  -X POST \"$URL/v1/workflows/approval/status\" -H \"Authorization: Bearer $API_TOKEN\" -H 'Content-Type: application/json' -d '{\"status\": \"$CANCELLATION_REASON\"}') || command_failed=1
       
       # Check curl exit code
       if [ ${command_failed:-0} -eq 1 ];
