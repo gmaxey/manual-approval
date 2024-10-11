@@ -22,7 +22,10 @@ handlers:
       -c """
       # Manual approval template
       TEMPLATE='{\"approvers\": ($a | split(\",\")), \"disallowLaunchByUser\": $d}'
-      [ -n "$INSTRUCTION" ] && TEMPLATE='{\"approvers\": ($a | split(\",\")), \"instruction\": $i, \"disallowLaunchByUser\": $d}'
+      if [ -n \"$INSTRUCTION\" ]; 
+      then
+        TEMPLATE='{\"approvers\": ($a | split(\",\")), \"instruction\": $i, \"disallowLaunchByUser\": $d}'
+      fi
 
       # Build valid JSON
       JSON_PAYLOAD=$(/usr/bin/jq -n --arg a \"$APPROVERS\" --arg i \"$INSTRUCTION\" --argjson d \"${DISALLOW_LAUNCHED_BY_USER:-false}\" \"$TEMPLATE\")
