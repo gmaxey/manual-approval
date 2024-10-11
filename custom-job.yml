@@ -155,6 +155,7 @@ handlers:
       if [ ${command_failed:-0} -eq 1 ];
       then
         echo \"Platform API call failed with error: '$response'\"
+      fi
       "
     env:
       API_TOKEN: ${{ cloudbees.api.token }}
