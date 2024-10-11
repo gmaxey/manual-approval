@@ -9,7 +9,7 @@ inputs:
     required: false
   instruction:
     description: Text to display in the approval prompt
-    required: true
+    required: false
   disallowLaunchByUser:
     description: For separation of responsibilities, if true, then the user who launched the workflow is not allowed to approve.
     required: false
@@ -21,11 +21,12 @@ handlers:
     args: |
       -c """
       # Manual approval template
-      TEMPLATE='{\"approvers\": ($a | split(\",\")), \"instruction\": $i, \"disallowLaunchByUser\": $d}'
+      TEMPLATE='{\"approvers\": ($a | split(\",\")), \"disallowLaunchByUser\": $d}'
+      [ -n "$INSTRUCTION" ] && TEMPLATE='{\"approvers\": ($a | split(\",\")), \"instruction\": $i, \"disallowLaunchByUser\": $d}'
 
       # Build valid JSON
       JSON_PAYLOAD=$(/usr/bin/jq -n --arg a \"$APPROVERS\" --arg i \"$INSTRUCTION\" --argjson d \"${DISALLOW_LAUNCHED_BY_USER:-false}\" \"$TEMPLATE\")
-        
+
       # To avoid issue 'argument list too long' use file
       echo \"$JSON_PAYLOAD\" > /tmp/content.json
 
@@ -55,8 +56,12 @@ handlers:
       else
         echo 'Waiting for approval from one of the following: '$APPROVERS
       fi
-      echo 'Instructions:'
-      echo $INSTRUCTION
+
+      if [ -n \"$INSTRUCTION\" ]; 
+      then
+        echo 'Instructions:'
+        echo $INSTRUCTION
+      fi
       echo 'Thanks!'
       
       echo '{    
