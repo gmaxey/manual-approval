@@ -13,6 +13,10 @@ inputs:
   disallowLaunchByUser:
     description: For separation of responsibilities, if true, then the user who launched the workflow is not allowed to approve.
     required: false
+  debug:
+    description: Set to true to enable debug logging.
+    default: false
+    required: false
 
 handlers:
   init:
@@ -85,8 +89,10 @@ handlers:
     args: |
       -c """
       
-      #TODO: remove after debugging
-      echo \"DEBUG: Payload: '$PAYLOAD'\"
+      if [ "x$DEBUG" == "xtrue" ]; 
+      then
+        echo \"DEBUG: Incoming payload: '$PAYLOAD'\"
+      fi
       
       # Extract approved and comments fields from the payload in JSON format
       APPROVAL_STATUS=$(echo \"$PAYLOAD\" | /usr/bin/jq -r '.status')
@@ -141,6 +147,7 @@ handlers:
       API_TOKEN: ${{ cloudbees.api.token }}
       URL: ${{ cloudbees.api.url }}
       PAYLOAD: ${{ handler.payload }}
+      DEBUG: ${{ inputs.debug }}
 
   cancel:
     uses: docker://alpine/curl:latest
