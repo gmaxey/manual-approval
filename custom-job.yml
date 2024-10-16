@@ -24,6 +24,10 @@ handlers:
     command: /bin/sh
     args: |
       -c """
+      if [ "x$DEBUG" == "xtrue" ]; 
+      then
+        echo \"DEBUG: `date` - Inside init handler\"
+      fi
       # Manual approval template
       TEMPLATE='{\"approvers\": ($a | split(\",\")), \"disallowLaunchByUser\": $d}'
       if [ -n \"$INSTRUCTION\" ]; 
@@ -38,14 +42,14 @@ handlers:
       echo \"$JSON_PAYLOAD\" > /tmp/content.json
 
       # Make Platform API call
-      response=$(curl -s --fail-with-body -X 'POST' \"$URL/v1/workflows/approval\" \
+      response=$(curl -s --max-time 120 -w \"Exit code: %{exitcode} HTTP status: %{response_code} Error: %{errormsg}\" --fail-with-body -X 'POST' \"$URL/v1/workflows/approval\" \
         -H \"Authorization: Bearer ${API_TOKEN}\" -H 'Content-Type: application/json' -H 'Accept: application/json' \
         --data-binary \"@/tmp/content.json\") || command_failed=1
 
       # Check curl exit code
       if [ ${command_failed:-0} -eq 1 ];
       then
-        echo \"Platform API call failed with error: '$response'\"
+        echo \"ERROR: `date` - API call failed with error: '$response'\"
         
         # Save failure
         echo '{    
@@ -69,12 +73,16 @@ handlers:
         echo 'Instructions:'
         echo $INSTRUCTION
       fi
-      echo 'Thanks!'
       
       echo '{    
         \"status\": \"PENDING_APPROVAL\",
         \"message\": \"Waiting for approval from approvers\" 
       }' > $CLOUDBEES_STATUS
+      
+      if [ "x$DEBUG" == "xtrue" ]; 
+      then
+        echo \"DEBUG: `date` - Done init handler\"
+      fi
       """
     env:
       APPROVERS: ${{inputs.approvers}}
@@ -82,6 +90,7 @@ handlers:
       DISALLOW_LAUNCHED_BY_USER: ${{inputs.disallowLaunchByUser}}
       API_TOKEN: ${{ cloudbees.api.token }}
       URL: ${{ cloudbees.api.url }}
+      DEBUG: ${{ inputs.debug }}
 
   callback:
     uses: docker://esolang/jq:latest
@@ -91,7 +100,8 @@ handlers:
       
       if [ "x$DEBUG" == "xtrue" ]; 
       then
-        echo \"DEBUG: Incoming payload: '$PAYLOAD'\"
+        echo \"DEBUG: `date` - Inside callback handler\"
+        echo \"DEBUG: `date` - Incoming payload: '$PAYLOAD'\"
       fi
       
       # Extract approved and comments fields from the payload in JSON format
@@ -102,12 +112,12 @@ handlers:
       echo \"$PAYLOAD\" > /tmp/content.json
       
       # Make Platform API call to change workflow manual approval status
-      response=$(curl -s --fail-with-body  -X POST \"$URL/v1/workflows/approval/status\" -H \"Authorization: Bearer $API_TOKEN\" -H 'Content-Type: application/json' --data-binary \"@/tmp/content.json\") || command_failed=1
+      response=$(curl -s --max-time 120 -w \"Exit code: %{exitcode} HTTP status: %{response_code} Error: %{errormsg}\" --fail-with-body  -X POST \"$URL/v1/workflows/approval/status\" -H \"Authorization: Bearer $API_TOKEN\" -H 'Content-Type: application/json' --data-binary \"@/tmp/content.json\") || command_failed=1
       
       # Check curl exit code
       if [ ${command_failed:-0} -eq 1 ];
       then
-        echo \"Platform API call failed with error: '$response'\"
+        echo \"ERROR: `date` - API call failed with error: '$response'\"
 
         # Save failure
         echo '{    
@@ -128,7 +138,7 @@ handlers:
         JOB_STATUS="REJECTED"
         echo 'Rejection comments:'
       else
-        echo \"Error: Unexpected approval status '$APPROVAL_STATUS'\"
+        echo \"ERROR: `date` - Unexpected approval status '$APPROVAL_STATUS'\"
         echo '{    
           \"status\": \"FAILED\",
           \"message\": \"Unexpected approval status encountered: '$APPROVAL_STATUS'\"
@@ -142,6 +152,11 @@ handlers:
         \"status\": '\\\"$JOB_STATUS\\\"',
         \"message\": \"Successfully changed workflow manual approval status\"
       }' > $CLOUDBEES_STATUS
+      
+      if [ "x$DEBUG" == "xtrue" ]; 
+      then
+        echo \"DEBUG: `date` - Done callback handler\"
+      fi
       """
     env:
       API_TOKEN: ${{ cloudbees.api.token }}
@@ -155,16 +170,25 @@ handlers:
     #to abort pending approval request in case of timeout or workflow abort event.
     args: |
       -c "
+      if [ "x$DEBUG" == "xtrue" ]; 
+      then
+        echo \"DEBUG: `date` - Inside cancel handler\"
+      fi
       # Make Platform API call to change workflow manual approval status
-      response=$(curl -s --fail-with-body  -X POST \"$URL/v1/workflows/approval/status\" -H \"Authorization: Bearer $API_TOKEN\" -H 'Content-Type: application/json' -d '{\"status\": \"$CANCELLATION_REASON\"}') || command_failed=1
+      response=$(curl -s --max-time 120 -w \"Exit code: %{exitcode} HTTP status: %{response_code} Error: %{errormsg}\" --fail-with-body  -X POST \"$URL/v1/workflows/approval/status\" -H \"Authorization: Bearer $API_TOKEN\" -H 'Content-Type: application/json' -d '{\"status\": \"$CANCELLATION_REASON\"}') || command_failed=1
       
       # Check curl exit code
       if [ ${command_failed:-0} -eq 1 ];
       then
-        echo \"Platform API call failed with error: '$response'\"
+        echo \"ERROR: `date` - API call failed with error: '$response'\"
+      fi
+      if [ "x$DEBUG" == "xtrue" ]; 
+      then
+        echo \"DEBUG: `date` - Done cancel handler\"
       fi
       "
     env:
       API_TOKEN: ${{ cloudbees.api.token }}
       URL: ${{ cloudbees.api.url }}
       CANCELLATION_REASON: ${{ handler.reason }}
+      DEBUG: ${{ inputs.debug }}
