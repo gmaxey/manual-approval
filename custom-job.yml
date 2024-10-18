@@ -61,11 +61,24 @@ handlers:
       fi
 
       # Save success
-      if [ -z "$APPROVERS" ]; 
+      if [ -z \"$APPROVERS\" ] || [ -z \"$response\" ]; 
       then
         echo 'Waiting for approval'
       else
-        echo 'Waiting for approval from one of the following: '$APPROVERS
+        if [ "x$DEBUG" == "xtrue" ]; 
+        then
+          echo \"DEBUG: `date` - manual approval successfully created with response is $response\"
+        fi
+      
+        # Parse notified approver user names from the response
+        userNames=$(echo $response | /usr/bin/jq -r '.approvers | map(.userName) | join(\", \")' 2>/dev/null)
+
+        if [ "x$DEBUG" == "xtrue" ]; 
+        then
+          echo \"DEBUG: `date` - approval user names list is $userNames\"
+        fi
+        
+        echo 'Waiting for approval from one of the following: '$userNames
       fi
 
       if [ -n \"$INSTRUCTION\" ]; 
