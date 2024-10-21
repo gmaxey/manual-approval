@@ -13,6 +13,9 @@ inputs:
   disallowLaunchByUser:
     description: For separation of responsibilities, if true, then the user who launched the workflow is not allowed to approve.
     required: false
+  notifyEligibleUsers:
+    description: If true, then all users who are eligible to approve will be notified.
+    required: false
   debug:
     description: Set to true to enable debug logging.
     default: false
@@ -29,14 +32,14 @@ handlers:
         echo \"DEBUG: `date` - Inside init handler\"
       fi
       # Manual approval template
-      TEMPLATE='{\"approvers\": ($a | split(\",\")), \"disallowLaunchByUser\": $d}'
+      TEMPLATE='{\"approvers\": ($a | split(\",\")), \"disallowLaunchByUser\": $d, \"notifyEligibleUsers\": $n}'
       if [ -n \"$INSTRUCTION\" ]; 
       then
-        TEMPLATE='{\"approvers\": ($a | split(\",\")), \"instruction\": $i, \"disallowLaunchByUser\": $d}'
+        TEMPLATE='{\"approvers\": ($a | split(\",\")), \"instruction\": $i, \"disallowLaunchByUser\": $d, \"notifyEligibleUsers\": $n}'
       fi
 
       # Build valid JSON
-      JSON_PAYLOAD=$(/usr/bin/jq -n --arg a \"$APPROVERS\" --arg i \"$INSTRUCTION\" --argjson d \"${DISALLOW_LAUNCHED_BY_USER:-false}\" \"$TEMPLATE\")
+      JSON_PAYLOAD=$(/usr/bin/jq -n --arg a \"$APPROVERS\" --arg i \"$INSTRUCTION\" --argjson d \"${DISALLOW_LAUNCHED_BY_USER:-false}\" --argjson n \"${NOTIFY_ELIGIBLE_USERS:-false}\"  \"$TEMPLATE\")
 
       # To avoid issue 'argument list too long' use file
       echo \"$JSON_PAYLOAD\" > /tmp/content.json
@@ -101,6 +104,7 @@ handlers:
       APPROVERS: ${{inputs.approvers}}
       INSTRUCTION: ${{inputs.instruction}}
       DISALLOW_LAUNCHED_BY_USER: ${{inputs.disallowLaunchByUser}}
+      NOTIFY_ELIGIBLE_USERS: ${{inputs.notifyEligibleUsers}}
       API_TOKEN: ${{ cloudbees.api.token }}
       URL: ${{ cloudbees.api.url }}
       DEBUG: ${{ inputs.debug }}
