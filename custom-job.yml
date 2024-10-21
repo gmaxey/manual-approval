@@ -12,9 +12,11 @@ inputs:
     required: false
   disallowLaunchByUser:
     description: For separation of responsibilities, if true, then the user who launched the workflow is not allowed to approve.
+    default: false
     required: false
   notifyEligibleUsers:
     description: If true, then all users who are eligible to approve will be notified.
+    default: false
     required: false
   debug:
     description: Set to true to enable debug logging.
