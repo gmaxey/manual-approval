@@ -38,7 +38,7 @@ Refer to the link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/work
 | No
 | If true, all eligible users will be notified for approval.
 
-| `instruction`
+| `instructions`
 |String
 | Yes
 | Text that will be shown in the runtime approval dialog, log and evidence views.
@@ -57,7 +57,7 @@ In your YAML file, add:
       approvers: <approver-names>
       disallowLaunchByUser: false
       notifyAllEligibleUsers: false
-      instruction: <Approval instructions>  
+      instructions: <Approval instructions>  
 ----
 
 NOTE: For more information 

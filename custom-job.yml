@@ -7,7 +7,7 @@ inputs:
   approvers:
     description: Comma separated list of approvers. Can be users or teams. If not specified, then all users who have execute permission for approval on the workflow can approve.
     required: false
-  instruction:
+  instructions:
     description: Text to display in the approval prompt
     required: false
   disallowLaunchByUser:
@@ -35,13 +35,13 @@ handlers:
       fi
       # Manual approval template
       TEMPLATE='{\"approvers\": ($a | split(\",\")), \"disallowLaunchByUser\": $d, \"notifyEligibleUsers\": $n}'
-      if [ -n \"$INSTRUCTION\" ]; 
+      if [ -n \"$INSTRUCTIONS\" ]; 
       then
-        TEMPLATE='{\"approvers\": ($a | split(\",\")), \"instruction\": $i, \"disallowLaunchByUser\": $d, \"notifyEligibleUsers\": $n}'
+        TEMPLATE='{\"approvers\": ($a | split(\",\")), \"instructions\": $i, \"disallowLaunchByUser\": $d, \"notifyEligibleUsers\": $n}'
       fi
 
       # Build valid JSON
-      JSON_PAYLOAD=$(/usr/bin/jq -n --arg a \"$APPROVERS\" --arg i \"$INSTRUCTION\" --argjson d \"${DISALLOW_LAUNCHED_BY_USER:-false}\" --argjson n \"${NOTIFY_ELIGIBLE_USERS:-false}\"  \"$TEMPLATE\")
+      JSON_PAYLOAD=$(/usr/bin/jq -n --arg a \"$APPROVERS\" --arg i \"$INSTRUCTIONS\" --argjson d \"${DISALLOW_LAUNCHED_BY_USER:-false}\" --argjson n \"${NOTIFY_ELIGIBLE_USERS:-false}\"  \"$TEMPLATE\")
 
       # To avoid issue 'argument list too long' use file
       echo \"$JSON_PAYLOAD\" > /tmp/content.json
@@ -86,10 +86,10 @@ handlers:
         echo 'Waiting for approval from one of the following: '$userNames
       fi
 
-      if [ -n \"$INSTRUCTION\" ]; 
+      if [ -n \"$INSTRUCTIONS\" ]; 
       then
         echo 'Instructions:'
-        echo $INSTRUCTION
+        echo $INSTRUCTIONS
       fi
       
       echo '{    
@@ -104,7 +104,7 @@ handlers:
       """
     env:
       APPROVERS: ${{inputs.approvers}}
-      INSTRUCTION: ${{inputs.instruction}}
+      INSTRUCTIONS: ${{inputs.instructions}}
       DISALLOW_LAUNCHED_BY_USER: ${{inputs.disallowLaunchByUser}}
       NOTIFY_ELIGIBLE_USERS: ${{inputs.notifyAllEligibleUsers}}
       API_TOKEN: ${{ cloudbees.api.token }}
