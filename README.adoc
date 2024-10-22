@@ -33,6 +33,11 @@ Refer to the link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/work
 | Yes
 | If true, the the user that started the workflow is not allowed to perform the approval.
 
+| `notifyAllEligibleUsers`
+|String
+| No
+| If true, all eligible users will be notified for approval.
+
 | `instruction`
 |String
 | Yes
@@ -51,6 +56,7 @@ In your YAML file, add:
     with:
       approvers: <approver-names>
       disallowLaunchByUser: false
+      notifyAllEligibleUsers: false
       instruction: <Approval instructions>  
 ----
 
