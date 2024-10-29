@@ -191,8 +191,22 @@ handlers:
       then
         echo \"DEBUG: `date` - Inside cancel handler\"
       fi
+      
+      # cancel handler is called for one of two reasons - either workflow run was aborted/cancelled or it timedout
+      # set the appropriate status on the manual approval request depending on the cancellation reason
+      if [ "x$CANCELLATION_REASON" == "xCANCELLED" ]; 
+      then
+        echo \"Workflow aborted by user\"
+        echo \"Cancelling the manual approval request\"
+        APPROVAL_STATUS="UPDATE_MANUAL_APPROVAL_STATUS_ABORTED"
+      else
+        echo \"Workflow timed out\"
+        echo \"Workflow approval response was not received within allotted time.\"
+        APPROVAL_STATUS="UPDATE_MANUAL_APPROVAL_STATUS_TIMED_OUT"
+      fi
+      
       # Make Platform API call to change workflow manual approval status
-      response=$(curl -s --max-time 150 -w \"Exit code: %{exitcode} HTTP status: %{response_code} Error: %{errormsg}\" --fail-with-body  -X POST \"$URL/v1/workflows/approval/status\" -H \"Authorization: Bearer $API_TOKEN\" -H 'Content-Type: application/json' -d '{\"status\": \"$CANCELLATION_REASON\"}') || command_failed=1
+      response=$(curl -s --max-time 150 -w \"Exit code: %{exitcode} HTTP status: %{response_code} Error: %{errormsg}\" --fail-with-body  -X POST \"$URL/v1/workflows/approval/status\" -H \"Authorization: Bearer $API_TOKEN\" -H 'Content-Type: application/json' -d '{\"status\": \"$APPROVAL_STATUS\"}') || command_failed=1
       
       # Check curl exit code
       if [ ${command_failed:-0} -eq 1 ];
