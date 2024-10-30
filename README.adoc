@@ -20,28 +20,47 @@ Refer to the link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/work
 | `approvers`
 | String
 |No
-| List of user IDs that are to be notified for approval. If left blank, all eligible users will be notified.
+| List of users whose participation in the workflow approval process is requested.  If left blank, all eligible users will be notified.
 
 | `delegates`
 |String
 | Yes
-| Path to this repository: cloudbees-io/manual-approval/custom-job.yml@v1
-
+| The value must be the path to Manual approval custom job yaml file `cloudbees-io/manual-approval/custom-job.yml@v1`
 
 | `disallowLaunchByUser`
 |String
 | Yes
-| If true, the the user that started the workflow is not allowed to perform the approval.
+| When set to true prevents the user that started the workflow from participating in the approval.  Default value is `false`.
 
 | `notifyAllEligibleUsers`
 |String
 | No
-| If true, all eligible users will be notified for approval.
+| Use to notify all users who have the execute approval permission on the workflow when no approvers  are listed 
+ by selecting *Notify all eligible users*.     Notifications will be sent as follows:
+
+** If users are listed in *Approvers* and *Notify all eligible users* is true or false, then
+*** Only listed approvers will receive notification.
+*** Only listed approvers can participate in approval process.
+
+** If *Approvers* is blank and *Notify all eligible users* is false, then
+
+*** No notifications will be sent.
+*** All eligible users can participate in approval process.
+
+** If *Approvers* is blank and *Notify all eligible users* is true, then
+
+*** All eligible users will receive notification.
+*** All eligible users can participate in approval process.
 
 | `instructions`
 |String
 | Yes
-| Text that will be shown in the runtime approval dialog, log and evidence views.
+| Text that will display as part of:
+
+*The approval email notification.
+* Run details.
+** during approval
+** after approval
 
 |===
 
@@ -51,13 +70,15 @@ In your YAML file, add:
 
 [source,yaml]
 ----
- <approval-name>:
+ workflow-approval-name:
+    timeout-minutes: 4320
     delegates: cloudbees-io/manual-approval/custom-job.yml@v1
     with:
-      approvers: <approver-names>
+      approvers:
       disallowLaunchByUser: false
       notifyAllEligibleUsers: false
-      instructions: <Approval instructions>  
+      instructions: "Enter instructive text for approvers here. "
+
 ----
 
 NOTE: For more information 
