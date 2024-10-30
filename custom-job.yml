@@ -206,7 +206,13 @@ handlers:
       fi
       
       # Make Platform API call to change workflow manual approval status
-      response=$(curl -s --max-time 150 -w \"Exit code: %{exitcode} HTTP status: %{response_code} Error: %{errormsg}\" --fail-with-body  -X POST \"$URL/v1/workflows/approval/status\" -H \"Authorization: Bearer $API_TOKEN\" -H 'Content-Type: application/json' -d '{\"status\": \"$APPROVAL_STATUS\"}') || command_failed=1
+      echo '{\"status\": '\\\"$APPROVAL_STATUS\\\"'}' > /tmp/content.json
+      if [ "x$DEBUG" == "xtrue" ];
+      then
+        echo \"Request payload:\"
+        cat /tmp/content.json
+      fi
+      response=$(curl -s --max-time 150 -w \"Exit code: %{exitcode} HTTP status: %{response_code} Error: %{errormsg}\" --fail-with-body  -X POST \"$URL/v1/workflows/approval/status\" -H \"Authorization: Bearer $API_TOKEN\" -H 'Content-Type: application/json' --data-binary \"@/tmp/content.json\") || command_failed=1
       
       # Check curl exit code
       if [ ${command_failed:-0} -eq 1 ];
@@ -215,7 +221,7 @@ handlers:
       fi
       if [ "x$DEBUG" == "xtrue" ]; 
       then
-        echo \"DEBUG: `date` - Done cancel handler\"
+        echo \"DEBUG: `date` - Done cancel handler: $response\"
       fi
       "
     env:
