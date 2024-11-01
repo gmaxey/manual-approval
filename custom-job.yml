@@ -164,7 +164,7 @@ handlers:
         exit 1
       fi
       echo \"$COMMENTS\"
-      
+
       echo '{    
         \"status\": '\\\"$JOB_STATUS\\\"',
         \"message\": \"Successfully changed workflow manual approval status\"
@@ -182,7 +182,7 @@ handlers:
       DEBUG: ${{ inputs.debug }}
 
   cancel:
-    uses: docker://alpine/curl:latest
+    uses: docker://esolang/jq:latest
     command: /bin/sh
     #to abort pending approval request in case of timeout or workflow abort event.
     args: |
@@ -204,7 +204,7 @@ handlers:
         echo \"Workflow approval response was not received within allotted time.\"
         APPROVAL_STATUS="UPDATE_MANUAL_APPROVAL_STATUS_TIMED_OUT"
       fi
-      
+            
       # Make Platform API call to change workflow manual approval status
       echo '{\"status\": '\\\"$APPROVAL_STATUS\\\"'}' > /tmp/content.json
       if [ "x$DEBUG" == "xtrue" ];
