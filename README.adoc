@@ -29,7 +29,7 @@ Refer to the link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/work
 
 | `disallowLaunchByUser`
 |String
-| Yes
+| No
 | When set to true prevents the user that started the workflow from participating in the approval.  Default value is `false`.
 
 | `notifyAllEligibleUsers`
