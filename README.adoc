@@ -23,9 +23,9 @@ Refer to the link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/work
 | List of users whose participation in the workflow approval process is requested.  If left blank, all eligible users will be notified.
 
 | `timeout-minutes`
-| String
-| Yes
-| The amount of time approvers have to respond to the approval request.  The default values is `4320` seconds. 
+| integer
+| No
+| The amount of time approvers have to respond to the approval request.  The default values is `4320` minutes. 
 
 | `delegates`
 |String
