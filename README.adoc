@@ -22,6 +22,11 @@ Refer to the link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/work
 |No
 | List of users whose participation in the workflow approval process is requested.  If left blank, all eligible users will be notified.
 
+| `timeout-minutes`
+| integer
+| No
+| The amount of time approvers have to respond to the approval request.  The default values is `4320` minutes. 
+
 | `delegates`
 |String
 | Yes
@@ -29,7 +34,7 @@ Refer to the link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/work
 
 | `disallowLaunchByUser`
 |String
-| Yes
+| No
 | When set to true prevents the user that started the workflow from participating in the approval.  Default value is `false`.
 
 | `notifyAllEligibleUsers`
@@ -55,12 +60,10 @@ Refer to the link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/work
 | `instructions`
 |String
 | Yes
-| Text that will display as part of:
+| Use to add instructions for approvers.  This text will appear:
 
-*The approval email notification.
-* Run details.
-** during approval
-** after approval
+* In the approval response request email notification.
+* On workflow run details screen.
 
 |===
 
