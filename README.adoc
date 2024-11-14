@@ -20,42 +20,43 @@ Refer to the link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/work
 | `approvers`
 | String
 |No
-| List of users whose participation in the workflow approval process is requested.  If left blank, all eligible users will be notified.
+| A list of users whose participation in the workflow approval process is requested.  If left blank, all eligible users will be notified.
 
 | `timeout-minutes`
-| integer
+| Integer
 | No
-| The amount of time approvers have to respond to the approval request.  The default values is `4320` minutes. 
+| The amount of time approvers have to respond to the approval request.  The default value is `4320` minutes.
 
 | `delegates`
 |String
 | Yes
-| The value must be the path to Manual approval custom job yaml file `cloudbees-io/manual-approval/custom-job.yml@v1`
+| The value must be the path to the Manual approval custom job yaml file: `cloudbees-io/manual-approval/custom-job.yml@v1`
 
 | `disallowLaunchByUser`
 |String
 | No
-| When set to true prevents the user that started the workflow from participating in the approval.  Default value is `false`.
+| When set to true, it prevents the user who started the workflow from participating in the approval.  Default value is `false`.
 
 | `notifyAllEligibleUsers`
 |String
 | No
-| Use to notify all users who have the execute approval permission on the workflow when no approvers  are listed 
- by selecting *Notify all eligible users*.     Notifications will be sent as follows:
+| Enable to notify all users with the execute approval permission on the workflow when no approvers are listed by selecting *Notify all eligible users*.
+
+Notifications will be sent as follows:
 
 ** If users are listed in *Approvers* and *Notify all eligible users* is true or false, then
 *** Only listed approvers will receive notification.
-*** Only listed approvers can participate in approval process.
+*** Only listed approvers can participate in the approval process.
 
 ** If *Approvers* is blank and *Notify all eligible users* is false, then
 
 *** No notifications will be sent.
-*** All eligible users can participate in approval process.
+*** All eligible users can participate in the approval process.
 
 ** If *Approvers* is blank and *Notify all eligible users* is true, then
 
-*** All eligible users will receive notification.
-*** All eligible users can participate in approval process.
+*** All eligible users will receive a notification.
+*** All eligible users can participate in the approval process.
 
 | `instructions`
 |String
