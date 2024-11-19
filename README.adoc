@@ -60,7 +60,6 @@ In your YAML file, add:
     with:
       approvers:
       disallowLaunchByUser: false
-      notifyAllEligibleUsers: false
       instructions: "Enter instructive text for approvers here. "
 
 ----
