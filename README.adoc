@@ -44,7 +44,7 @@ Refer to the link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/work
 .^| `timeout-minutes`
 .^| Integer
 .^| No
-| The amount of time approvers have to respond to the approval request.  The default value is `4320` minutes.
+| The amount of time approvers have to respond to the approval request.  The default value is `4320` minutes (three days).
 
 |===
 
