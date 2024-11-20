@@ -41,6 +41,28 @@ Refer to the link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/work
 * In the approval response request email notification.
 * On workflow run details screen.
 
+.^| `notifyAllEligibleUsers`
+.^|String
+.^| No
+| Use to notify all users who have the execute approval permission on the workflow when no approvers  are listed
+by selecting *Notify all eligible users*. Default value is `false`.
+
+Notifications will be sent as follows:
+
+** If users are listed in *Approvers* and *Notify all eligible users* is true or false, then
+*** Only listed approvers will receive notification.
+*** Only listed approvers can participate in approval process.
+
+** If *Approvers* is blank and *Notify all eligible users* is false, then
+
+*** No notifications will be sent.
+*** All eligible users can participate in approval process.
+
+** If *Approvers* is blank and *Notify all eligible users* is true, then
+
+*** Only listed approvers can participate in approval process.
+*** All eligible users can participate in approval process.
+
 .^| `timeout-minutes`
 .^| Integer
 .^| No
