@@ -25,207 +25,34 @@ inputs:
 
 handlers:
   init:
-    uses: docker://esolang/jq:latest
-    command: /bin/sh
-    args: |
-      -c """
-      if [ "x$DEBUG" == "xtrue" ]; 
-      then
-        echo \"DEBUG: `date` - Inside init handler\"
-      fi
-      # Manual approval template
-      TEMPLATE='{\"approvers\": ($a | split(\",\")), \"disallowLaunchByUser\": $d, \"notifyEligibleUsers\": $n}'
-      if [ -n \"$INSTRUCTIONS\" ]; 
-      then
-        TEMPLATE='{\"approvers\": ($a | split(\",\")), \"instructions\": $i, \"disallowLaunchByUser\": $d, \"notifyEligibleUsers\": $n}'
-      fi
-
-      # Build valid JSON
-      JSON_PAYLOAD=$(/usr/bin/jq -n --arg a \"$APPROVERS\" --arg i \"$INSTRUCTIONS\" --argjson d \"${DISALLOW_LAUNCHED_BY_USER:-false}\" --argjson n \"${NOTIFY_ELIGIBLE_USERS:-false}\"  \"$TEMPLATE\")
-
-      # To avoid issue 'argument list too long' use file
-      echo \"$JSON_PAYLOAD\" > /tmp/content.json
-
-      # Make Platform API call
-      response=$(curl -s --max-time 150 -w \"Exit code: %{exitcode} HTTP status: %{response_code} Error: %{errormsg}\" --fail-with-body -X 'POST' \"$URL/v1/workflows/approval\" \
-        -H \"Authorization: Bearer ${API_TOKEN}\" -H 'Content-Type: application/json' -H 'Accept: application/json' \
-        --data-binary \"@/tmp/content.json\") || command_failed=1
-
-      # Check curl exit code
-      if [ ${command_failed:-0} -eq 1 ];
-      then
-        echo \"ERROR: `date` - API call failed with error: '$response'\"
-        
-        # Save failure
-        echo '{    
-          \"status\": \"FAILED\",
-          \"message\": \"Failed to initialize workflow manual approval with error: '$response'\"
-        }' > $CLOUDBEES_STATUS
-      
-        exit 1
-      fi
-
-      # Save success
-      if [ "x$DEBUG" == "xtrue" ]; 
-      then
-        echo \"DEBUG: `date` - manual approval successfully created with response is $response\"
-      fi
-      
-      # Parse notified approver user names from the response
-      userNames=$(echo $response | /usr/bin/jq -r '.approvers | map(.userName) | join(\", \")' 2>/dev/null)
-
-      if [ "x$DEBUG" == "xtrue" ]; 
-      then
-        echo \"DEBUG: `date` - approval user names list is $userNames\"
-      fi
-        
-      echo 'Waiting for approval from one of the following: '$userNames
-     
-
-      if [ -n \"$INSTRUCTIONS\" ]; 
-      then
-        echo 'Instructions:'
-        echo $INSTRUCTIONS
-      fi
-      
-      echo '{    
-        \"status\": \"PENDING_APPROVAL\",
-        \"message\": \"Waiting for approval from approvers\" 
-      }' > $CLOUDBEES_STATUS
-      
-      if [ "x$DEBUG" == "xtrue" ]; 
-      then
-        echo \"DEBUG: `date` - Done init handler\"
-      fi
-      """
+    uses: docker://020229604682.dkr.ecr.us-east-1.amazonaws.com/custom-jobs/manual-approval:9db4b1d802bbdde4e8349906faf0b5d9a9db1694
+    command: /usr/local/bin/manual-approval
+    args: --handler "init"
     env:
       APPROVERS: ${{inputs.approvers}}
       INSTRUCTIONS: ${{inputs.instructions}}
       DISALLOW_LAUNCHED_BY_USER: ${{inputs.disallowLaunchByUser}}
-      NOTIFY_ELIGIBLE_USERS: ${{inputs.notifyAllEligibleUsers}}
+      NOTIFY_ALL_ELIGIBLE_USERS: ${{inputs.notifyAllEligibleUsers}}
       API_TOKEN: ${{ cloudbees.api.token }}
       URL: ${{ cloudbees.api.url }}
       DEBUG: ${{ inputs.debug }}
 
   callback:
-    uses: docker://esolang/jq:latest
-    command: /bin/sh
-    args: |
-      -c """
-      
-      if [ "x$DEBUG" == "xtrue" ]; 
-      then
-        echo \"DEBUG: `date` - Inside callback handler\"
-        echo \"DEBUG: `date` - Incoming payload: '$PAYLOAD'\"
-      fi
-      
-      # Extract approved and comments fields from the payload in JSON format
-      APPROVAL_STATUS=$(echo \"$PAYLOAD\" | /usr/bin/jq -r '.status')
-      COMMENTS=$(echo \"$PAYLOAD\" | /usr/bin/jq -r '.comments')
-      RESPONDED_ON=$(echo \"$PAYLOAD\" | /usr/bin/jq -r '.respondedOn')
-      APPROVER_USER_NAME=$(echo \"$PAYLOAD\" | /usr/bin/jq -r '.userName')
-
-      # To avoid issue 'argument list too long' use file
-      echo \"$PAYLOAD\" > /tmp/content.json
-      
-      # Make Platform API call to change workflow manual approval status
-      response=$(curl -s --max-time 150 -w \"Exit code: %{exitcode} HTTP status: %{response_code} Error: %{errormsg}\" --fail-with-body  -X POST \"$URL/v1/workflows/approval/status\" -H \"Authorization: Bearer $API_TOKEN\" -H 'Content-Type: application/json' --data-binary \"@/tmp/content.json\") || command_failed=1
-      
-      # Check curl exit code
-      if [ ${command_failed:-0} -eq 1 ];
-      then
-        echo \"ERROR: `date` - API call failed with error: '$response'\"
-
-        # Save failure
-        echo '{    
-          \"status\": \"FAILED\",
-          \"message\": \"Failed to change workflow manual approval status with error: '$response'\"
-        }' > $CLOUDBEES_STATUS
-      
-        exit 1
-      fi
-
-      # Save success
-      if [ "$APPROVAL_STATUS" == "UPDATE_MANUAL_APPROVAL_STATUS_APPROVED" ]; 
-      then
-        JOB_STATUS="APPROVED"
-        echo \"Approved by $APPROVER_USER_NAME on $RESPONDED_ON with comments:\"
-      elif [ "$APPROVAL_STATUS" == "UPDATE_MANUAL_APPROVAL_STATUS_REJECTED" ];
-      then
-        JOB_STATUS="REJECTED"
-        echo \"Rejected by $APPROVER_USER_NAME on $RESPONDED_ON with comments:\"
-      else
-        echo \"ERROR: `date` - Unexpected approval status '$APPROVAL_STATUS'\"
-        echo '{    
-          \"status\": \"FAILED\",
-          \"message\": \"Unexpected approval status encountered: '$APPROVAL_STATUS'\"
-        }' > $CLOUDBEES_STATUS
-      
-        exit 1
-      fi
-      echo \"$COMMENTS\"
-
-      echo '{    
-        \"status\": '\\\"$JOB_STATUS\\\"',
-        \"message\": \"Successfully changed workflow manual approval status\"
-      }' > $CLOUDBEES_STATUS
-      
-      if [ "x$DEBUG" == "xtrue" ]; 
-      then
-        echo \"DEBUG: `date` - Done callback handler\"
-      fi
-      """
+    uses: docker://020229604682.dkr.ecr.us-east-1.amazonaws.com/custom-jobs/manual-approval:9db4b1d802bbdde4e8349906faf0b5d9a9db1694
+    command: /usr/local/bin/manual-approval
+    args: --handler "callback"
     env:
+      PAYLOAD: ${{ handler.payload }}
       API_TOKEN: ${{ cloudbees.api.token }}
       URL: ${{ cloudbees.api.url }}
-      PAYLOAD: ${{ handler.payload }}
       DEBUG: ${{ inputs.debug }}
 
   cancel:
-    uses: docker://esolang/jq:latest
-    command: /bin/sh
-    #to abort pending approval request in case of timeout or workflow abort event.
-    args: |
-      -c "
-      if [ "x$DEBUG" == "xtrue" ]; 
-      then
-        echo \"DEBUG: `date` - Inside cancel handler\"
-      fi
-      
-      # cancel handler is called for one of two reasons - either workflow run was aborted/cancelled or it timedout
-      # set the appropriate status on the manual approval request depending on the cancellation reason
-      if [ "x$CANCELLATION_REASON" == "xCANCELLED" ]; 
-      then
-        echo \"Workflow aborted by user\"
-        echo \"Cancelling the manual approval request\"
-        APPROVAL_STATUS="UPDATE_MANUAL_APPROVAL_STATUS_ABORTED"
-      else
-        echo \"Workflow timed out\"
-        echo \"Workflow approval response was not received within allotted time.\"
-        APPROVAL_STATUS="UPDATE_MANUAL_APPROVAL_STATUS_TIMED_OUT"
-      fi
-            
-      # Make Platform API call to change workflow manual approval status
-      echo '{\"status\": '\\\"$APPROVAL_STATUS\\\"'}' > /tmp/content.json
-      if [ "x$DEBUG" == "xtrue" ];
-      then
-        echo \"Request payload:\"
-        cat /tmp/content.json
-      fi
-      response=$(curl -s --max-time 150 -w \"Exit code: %{exitcode} HTTP status: %{response_code} Error: %{errormsg}\" --fail-with-body  -X POST \"$URL/v1/workflows/approval/status\" -H \"Authorization: Bearer $API_TOKEN\" -H 'Content-Type: application/json' --data-binary \"@/tmp/content.json\") || command_failed=1
-      
-      # Check curl exit code
-      if [ ${command_failed:-0} -eq 1 ];
-      then
-        echo \"ERROR: `date` - API call failed with error: '$response'\"
-      fi
-      if [ "x$DEBUG" == "xtrue" ]; 
-      then
-        echo \"DEBUG: `date` - Done cancel handler: $response\"
-      fi
-      "
+    uses: docker://020229604682.dkr.ecr.us-east-1.amazonaws.com/custom-jobs/manual-approval:9db4b1d802bbdde4e8349906faf0b5d9a9db1694
+    command: /usr/local/bin/manual-approval
+    args: --handler "cancel"
     env:
+      CANCELLATION_REASON: ${{ handler.reason }}
       API_TOKEN: ${{ cloudbees.api.token }}
       URL: ${{ cloudbees.api.url }}
-      CANCELLATION_REASON: ${{ handler.reason }}
       DEBUG: ${{ inputs.debug }}

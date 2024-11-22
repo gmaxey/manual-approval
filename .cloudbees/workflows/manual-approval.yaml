@@ -1,0 +1,63 @@
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: workflow
+name: manual-approval
+
+on:
+  push:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+
+jobs:
+  main:
+    steps:
+    - name: Get source code
+      uses: cloudbees-io/checkout@v1
+
+    - name: Unit tests
+      uses: docker://golang:1.23
+      run: |
+        go test --cover ./...
+
+    - name: Login to AWS
+      uses: cloudbees-io/configure-aws-credentials@v1
+      with:
+        aws-region: us-east-1
+        role-to-assume: ${{ vars.oidc_staging_iam_role }}
+        role-duration-seconds: "3600"
+
+    - name: Configure container registry for ECR
+      uses: cloudbees-io/configure-ecr-credentials@v1
+
+    - name: Build image
+      id: build-image
+      uses: cloudbees-io/kaniko@v1
+      with:
+        destination: 020229604682.dkr.ecr.us-east-1.amazonaws.com/custom-jobs/manual-approval:${{ cloudbees.scm.sha }},020229604682.dkr.ecr.us-east-1.amazonaws.com/custom-jobs/manual-approval:latest
+        labels: maintainer=cbp-cd-ro-team,email=engineering@cloudbees.io
+        registry-mirrors: 020229604682.dkr.ecr.us-east-1.amazonaws.com/docker-hub
+
+    - name: Run TruffleHog Container Action
+      uses: cloudbees-io/trufflehog-secret-scan-container@v1
+      with:
+        image-location: 020229604682.dkr.ecr.us-east-1.amazonaws.com/custom-jobs/manual-approval
+        image-tag: ${{ cloudbees.scm.sha }}
+
+    - name: Check image
+      uses: docker://alpine:3.18
+      run: |
+        apk add -U --no-cache curl ca-certificates
+        curl -L https://github.com/regclient/regclient/releases/latest/download/regctl-linux-amd64 >/usr/local/bin/regctl
+        chmod 755 /usr/local/bin/regctl
+        
+        EXPECTED=${{ steps.build-image.outputs.digest }}
+        ACTUAL=`regctl image digest 020229604682.dkr.ecr.us-east-1.amazonaws.com/custom-jobs/manual-approval:${{ cloudbees.scm.sha }}`
+        if [ "$EXPECTED" != "$ACTUAL" ]; then
+          echo "expected $EXPECTED, but got $ACTUAL"
+          exit 1
+        fi
+        
+        regctl image inspect 020229604682.dkr.ecr.us-east-1.amazonaws.com/custom-jobs/manual-approval:${{ cloudbees.scm.sha }}
