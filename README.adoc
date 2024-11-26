@@ -47,7 +47,6 @@ Refer to the link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/work
 | Use to notify all users who have the execute approval permission on the workflow when no approvers  are listed
 by selecting *Notify all eligible users*. Default value is `false`.
 
-+
 Notifications will be sent as follows:
 
 * If users are listed in *Approvers* and *Notify all eligible users* is true or false, then
