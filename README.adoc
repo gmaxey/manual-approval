@@ -12,59 +12,63 @@ Refer to the link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/work
 .Input details
 |===
 
-| Input name
-| Data type
-| Required?
-| Description
+.^| Input name
+.^| Data type
+.^| Required?
+.^| Description
 
-| `approvers`
-| String
-|No
-| A list of users whose participation in the workflow approval process is requested.  If left blank, all eligible users will be notified.
+.^| `approvers`
+.^| String
+.^|No
+| A list of users whose participation in the workflow approval process is requested. The `approvers` field supports both user IDs and email addresses.
 
-| `timeout-minutes`
-| Integer
-| No
-| The amount of time approvers have to respond to the approval request.  The default value is `4320` minutes.
-
-| `delegates`
-|String
-| Yes
+.^| `delegates`
+.^|String
+.^| Yes
 | The value must be the path to the Manual approval custom job yaml file: `cloudbees-io/manual-approval/custom-job.yml@v1`
 
-| `disallowLaunchByUser`
-|String
-| No
+
+.^| `disallowLaunchByUser`
+.^|String
+.^| No
 | When set to true, it prevents the user who started the workflow from participating in the approval.  Default value is `false`.
 
-| `notifyAllEligibleUsers`
-|String
-| No
-| Enable to notify all users with the execute approval permission on the workflow when no approvers are listed by selecting *Notify all eligible users*.
-
-Notifications will be sent as follows:
-
-** If users are listed in *Approvers* and *Notify all eligible users* is true or false, then
-*** Only listed approvers will receive notification.
-*** Only listed approvers can participate in the approval process.
-
-** If *Approvers* is blank and *Notify all eligible users* is false, then
-
-*** No notifications will be sent.
-*** All eligible users can participate in the approval process.
-
-** If *Approvers* is blank and *Notify all eligible users* is true, then
-
-*** All eligible users will receive a notification.
-*** All eligible users can participate in the approval process.
-
-| `instructions`
-|String
-| Yes
+.^| `instructions`
+.^|String
+.^| Yes
 | Use to add instructions for approvers.  This text will appear:
 
 * In the approval response request email notification.
 * On workflow run details screen.
+
+.^| `notifyAllEligibleUsers`
+.^|String
+.^| No
+| Use to notify all users who have the execute approval permission on the workflow when no approvers  are listed
+by selecting *Notify all eligible users*. Default value is `false`.
+
++
+Notifications will be sent as follows:
+
+* If users are listed in *Approvers* and *Notify all eligible users* is true or false, then
+** Only listed approvers will receive notification.
+** Only listed approvers can participate in approval process.
+
+* If *Approvers* is blank and *Notify all eligible users* is false, then
+
+** No notifications will be sent.
+** All eligible users can participate in approval process.
+
+* If *Approvers* is blank and *Notify all eligible users* is true, then
+
+** The {PRODUCT} will select and notify up to 10 eligible users.
+
+** All eligible users can participate in approval process.
+
+.^| `timeout-minutes`
+.^| Integer
+.^| No
+| The amount of time approvers have to respond to the approval request.  The default value is `4320` minutes (three days).
 
 |===
 
@@ -80,7 +84,6 @@ In your YAML file, add:
     with:
       approvers:
       disallowLaunchByUser: false
-      notifyAllEligibleUsers: false
       instructions: "Enter instructive text for approvers here. "
 
 ----
