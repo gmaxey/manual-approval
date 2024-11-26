@@ -20,7 +20,7 @@ Refer to the link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/work
 .^| `approvers`
 .^| String
 .^|No
-| A list of users whose participation in the workflow approval process is requested.  If left blank, all eligible users will be notified.
+| A list of users whose participation in the workflow approval process is requested. The `approvers` field supports both user IDs and email addresses.
 
 .^| `delegates`
 .^|String
