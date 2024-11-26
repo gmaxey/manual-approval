@@ -25,7 +25,7 @@ inputs:
 
 handlers:
   init:
-    uses: docker://020229604682.dkr.ecr.us-east-1.amazonaws.com/custom-jobs/manual-approval:9db4b1d802bbdde4e8349906faf0b5d9a9db1694
+    uses: docker://public.ecr.aws/l7o7z1g8/custom-jobs/manual-approval:6ba9902bef7f8193c118be7020cfac76475c1a87
     command: /usr/local/bin/manual-approval
     args: --handler "init"
     env:
@@ -38,7 +38,7 @@ handlers:
       DEBUG: ${{ inputs.debug }}
 
   callback:
-    uses: docker://020229604682.dkr.ecr.us-east-1.amazonaws.com/custom-jobs/manual-approval:9db4b1d802bbdde4e8349906faf0b5d9a9db1694
+    uses: docker://public.ecr.aws/l7o7z1g8/custom-jobs/manual-approval:6ba9902bef7f8193c118be7020cfac76475c1a87
     command: /usr/local/bin/manual-approval
     args: --handler "callback"
     env:
@@ -48,7 +48,7 @@ handlers:
       DEBUG: ${{ inputs.debug }}
 
   cancel:
-    uses: docker://020229604682.dkr.ecr.us-east-1.amazonaws.com/custom-jobs/manual-approval:9db4b1d802bbdde4e8349906faf0b5d9a9db1694
+    uses: docker://public.ecr.aws/l7o7z1g8/custom-jobs/manual-approval:6ba9902bef7f8193c118be7020cfac76475c1a87
     command: /usr/local/bin/manual-approval
     args: --handler "cancel"
     env:
