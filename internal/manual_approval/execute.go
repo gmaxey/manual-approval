@@ -95,11 +95,11 @@ func (k *Config) init() error {
 	}
 
 	// by default notifyAllEligibleUsers is false
-	notifyAllEligibleUsersStr := os.Getenv("NOTIFY_ALL_ELIGIBLE_USERS")
-	if notifyAllEligibleUsersStr == "" {
-		notifyAllEligibleUsersStr = "false"
+	notifyStr := os.Getenv("NOTIFY_ALL_ELIGIBLE_USERS")
+	if notifyStr == "" {
+		notifyStr = "false"
 	}
-	notifyAllEligibleUsers, err := strconv.ParseBool(notifyAllEligibleUsersStr)
+	notify, err := strconv.ParseBool(notifyStr)
 	if err != nil {
 		return err
 	}
@@ -107,7 +107,7 @@ func (k *Config) init() error {
 	// Construct request body
 	body := map[string]interface{}{
 		"disallowLaunchedByUser": disallowLaunchedByUser,
-		"notifyAllEligibleUsers": notifyAllEligibleUsers,
+		"notifyEligibleUsers":    notify,
 	}
 
 	if approvers != "" {

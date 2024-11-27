@@ -1,0 +1,58 @@
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: CustomJob
+name: manual approval
+description: Request manual approval from users and teams
+
+inputs:
+  approvers:
+    description: Comma separated list of approvers. Can be users or teams. If not specified, then all users who have execute permission for approval on the workflow can approve.
+    required: false
+  instructions:
+    description: Text to display in the approval prompt
+    required: false
+  disallowLaunchByUser:
+    description: For separation of responsibilities, if true, then the user who launched the workflow is not allowed to approve.
+    default: false
+    required: false
+  notifyAllEligibleUsers:
+    description: If true, then all users who are eligible to approve will be notified.
+    default: false
+    required: false
+  debug:
+    description: Set to true to enable debug logging.
+    default: false
+    required: false
+
+handlers:
+  init:
+    uses: docker://020229604682.dkr.ecr.us-east-1.amazonaws.com/custom-jobs/manual-approval:latest
+    command: /usr/local/bin/manual-approval
+    args: --handler "init"
+    env:
+      APPROVERS: ${{inputs.approvers}}
+      INSTRUCTIONS: ${{inputs.instructions}}
+      DISALLOW_LAUNCHED_BY_USER: ${{inputs.disallowLaunchByUser}}
+      NOTIFY_ALL_ELIGIBLE_USERS: ${{inputs.notifyAllEligibleUsers}}
+      API_TOKEN: ${{ cloudbees.api.token }}
+      URL: ${{ cloudbees.api.url }}
+      DEBUG: ${{ inputs.debug }}
+
+  callback:
+    uses: docker://020229604682.dkr.ecr.us-east-1.amazonaws.com/custom-jobs/manual-approval:latest
+    command: /usr/local/bin/manual-approval
+    args: --handler "callback"
+    env:
+      PAYLOAD: ${{ handler.payload }}
+      API_TOKEN: ${{ cloudbees.api.token }}
+      URL: ${{ cloudbees.api.url }}
+      DEBUG: ${{ inputs.debug }}
+
+  cancel:
+    uses: docker://020229604682.dkr.ecr.us-east-1.amazonaws.com/custom-jobs/manual-approval:latest
+    command: /usr/local/bin/manual-approval
+    args: --handler "cancel"
+    env:
+      CANCELLATION_REASON: ${{ handler.reason }}
+      API_TOKEN: ${{ cloudbees.api.token }}
+      URL: ${{ cloudbees.api.url }}
+      DEBUG: ${{ inputs.debug }}
