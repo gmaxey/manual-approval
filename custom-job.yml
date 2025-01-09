@@ -18,11 +18,20 @@ inputs:
     description: If true, then all users who are eligible to approve will be notified.
     default: false
     required: false
+  approvalInputs:
+    description: Inputs to be provided by the user when approving the manual approval request.
+    required: false
   debug:
     description: Set to true to enable debug logging.
     default: false
     required: false
-
+outputs:
+  approvalInputValues:
+    description: Input parameter values provided by the user when approving the manual approval request.
+    value: ${{ handlers.callback.outputs.approvalInputValues }}
+  comments:
+    description: The approver's comments
+    value: ${{ handlers.callback.outputs.comments }}
 handlers:
   init:
     uses: docker://public.ecr.aws/l7o7z1g8/custom-jobs/manual-approval:e079e5690d1b2631db337817486d463a8f56f46e
@@ -33,6 +42,7 @@ handlers:
       INSTRUCTIONS: ${{inputs.instructions}}
       DISALLOW_LAUNCHED_BY_USER: ${{inputs.disallowLaunchByUser}}
       NOTIFY_ALL_ELIGIBLE_USERS: ${{inputs.notifyAllEligibleUsers}}
+      INPUTS: ${{inputs.approvalInputs}}
       API_TOKEN: ${{ cloudbees.api.token }}
       URL: ${{ cloudbees.api.url }}
       DEBUG: ${{ inputs.debug }}

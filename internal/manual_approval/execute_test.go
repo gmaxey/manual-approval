@@ -349,20 +349,21 @@ func Test_init(t *testing.T) {
 
 func Test_callback(t *testing.T) {
 	tests := []struct {
-		name         string
-		reqCheckFunc func(req map[string]interface{})
-		respGenFunc  func() (*http.Response, error)
-		env          map[string]string
-		client       *MockHttpClient
-		statusInFile string
-		output       []string
-		err          string
+		name             string
+		reqCheckFunc     func(req map[string]interface{})
+		respGenFunc      func() (*http.Response, error)
+		env              map[string]string
+		client           *MockHttpClient
+		statusInFile     string
+		commentsInOutput string
+		output           []string
+		err              string
 	}{
 		{
 			name: "success APPROVED",
 			reqCheckFunc: func(req map[string]interface{}) {
 				require.Equal(t, "UPDATE_MANUAL_APPROVAL_STATUS_APPROVED", req["status"].(string))
-				require.Equal(t, "test comments", req["comments"].(string))
+				require.Equal(t, "test comments1", req["comments"].(string))
 				require.Equal(t, "123", req["userId"].(string))
 				require.Equal(t, "testUserName", req["userName"].(string))
 				require.Equal(t, "2009-11-10T23:00:00Z", req["respondedOn"].(string))
@@ -375,14 +376,16 @@ func Test_callback(t *testing.T) {
 				}, nil
 			},
 			env: map[string]string{
-				"URL":              "http://test.com",
-				"API_TOKEN":        "test",
-				"CLOUDBEES_STATUS": "/tmp/test-status-out",
-				"PAYLOAD":          "{\"status\":\"UPDATE_MANUAL_APPROVAL_STATUS_APPROVED\",\"comments\":\"test comments\",\"userId\":\"123\",\"userName\":\"testUserName\",\"respondedOn\":\"2009-11-10T23:00:00Z\"}",
+				"URL":               "http://test.com",
+				"API_TOKEN":         "test",
+				"CLOUDBEES_STATUS":  "/tmp/test-status-out",
+				"CLOUDBEES_OUTPUTS": "/tmp/test-outputs",
+				"PAYLOAD":           "{\"status\":\"UPDATE_MANUAL_APPROVAL_STATUS_APPROVED\",\"comments\":\"test comments1\",\"userId\":\"123\",\"userName\":\"testUserName\",\"respondedOn\":\"2009-11-10T23:00:00Z\"}",
 			},
-			statusInFile: "{\"message\":\"Successfully changed workflow manual approval status\",\"status\":\"APPROVED\"}",
+			statusInFile:     "{\"message\":\"Successfully changed workflow manual approval status\",\"status\":\"APPROVED\"}",
+			commentsInOutput: "test comments1",
 			output: []string{
-				"Approved by testUserName on 2009-11-10T23:00:00Z with comments:\ntest comments\n",
+				"Approved by testUserName on 2009-11-10T23:00:00Z with comments:\ntest comments1\n",
 			},
 			err: "",
 		},
@@ -390,7 +393,7 @@ func Test_callback(t *testing.T) {
 			name: "success REJECTED",
 			reqCheckFunc: func(req map[string]interface{}) {
 				require.Equal(t, "UPDATE_MANUAL_APPROVAL_STATUS_REJECTED", req["status"].(string))
-				require.Equal(t, "test comments", req["comments"].(string))
+				require.Equal(t, "test comments2", req["comments"].(string))
 				require.Equal(t, "123", req["userId"].(string))
 				require.Equal(t, "testUserName", req["userName"].(string))
 				require.Equal(t, "2009-11-10T23:00:00Z", req["respondedOn"].(string))
@@ -403,14 +406,16 @@ func Test_callback(t *testing.T) {
 				}, nil
 			},
 			env: map[string]string{
-				"URL":              "http://test.com",
-				"API_TOKEN":        "test",
-				"CLOUDBEES_STATUS": "/tmp/test-status-out",
-				"PAYLOAD":          "{\"status\":\"UPDATE_MANUAL_APPROVAL_STATUS_REJECTED\",\"comments\":\"test comments\",\"userId\":\"123\",\"userName\":\"testUserName\",\"respondedOn\":\"2009-11-10T23:00:00Z\"}",
+				"URL":               "http://test.com",
+				"API_TOKEN":         "test",
+				"CLOUDBEES_STATUS":  "/tmp/test-status-out",
+				"CLOUDBEES_OUTPUTS": "/tmp/test-outputs",
+				"PAYLOAD":           "{\"status\":\"UPDATE_MANUAL_APPROVAL_STATUS_REJECTED\",\"comments\":\"test comments2\",\"userId\":\"123\",\"userName\":\"testUserName\",\"respondedOn\":\"2009-11-10T23:00:00Z\"}",
 			},
-			statusInFile: "{\"message\":\"Successfully changed workflow manual approval status\",\"status\":\"REJECTED\"}",
+			statusInFile:     "{\"message\":\"Successfully changed workflow manual approval status\",\"status\":\"REJECTED\"}",
+			commentsInOutput: "test comments2",
 			output: []string{
-				"Rejected by testUserName on 2009-11-10T23:00:00Z with comments:\ntest comments\n",
+				"Rejected by testUserName on 2009-11-10T23:00:00Z with comments:\ntest comments2\n",
 			},
 			err: "",
 		},
@@ -478,6 +483,13 @@ func Test_callback(t *testing.T) {
 					os.Unsetenv(k)
 				}(k)
 			}
+			outputs_dir, exists := tt.env["CLOUDBEES_OUTPUTS"]
+			if exists {
+				os.Mkdir(outputs_dir, 0755)
+				defer func(dir string) {
+					os.RemoveAll(dir)
+				}(outputs_dir)
+			}
 
 			var testOutput []string
 
@@ -526,6 +538,11 @@ func Test_callback(t *testing.T) {
 			} else {
 				require.Error(t, err)
 				require.Equal(t, tt.err, err.Error())
+			}
+			if tt.commentsInOutput != "" {
+				out, ferr := os.ReadFile(tt.env["CLOUDBEES_OUTPUTS"] + "/comments")
+				require.NoError(t, ferr)
+				require.Equal(t, tt.commentsInOutput, string(out))
 			}
 
 			out, ferr := os.ReadFile(tt.env["CLOUDBEES_STATUS"])
