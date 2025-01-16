@@ -1,0 +1,51 @@
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: workflow
+name: man appr input params
+on:
+  workflow_dispatch:
+jobs:
+  ask-now:
+    with:
+      approvers: 0a808e26-f884-11ec-aa0a-42010a83ae55,0cb88e48-03d3-11eb-9d67-42010a83ae35
+      disallowLaunchByUser: false
+      instructions: Test instructions here
+      approvalInputs: |
+        str_req_def:
+          type: string
+          default: def1
+          required: true
+        str_no_req_def:
+          type: string
+          default: def2
+        bool_req_def:
+          type: boolean
+          default: true
+          required: true
+        bool_no_req_def:
+          type: boolean
+          default: true
+        bool_no_req_no_def:
+          type: boolean
+        num_no_req_def:
+          type: number
+          default: 9999
+        num_no_req_no_def:
+          type: number
+    timeout-minutes: 4320
+    delegates: cloudbees-io/manual-approval/.cloudbees/testing/custom-job.yml@${{ cloudbees.scm.sha }}
+  print_outputs:
+    steps:
+      - name: Print manual approval output params
+        uses: docker://golang:1.20.3-alpine3.17
+        shell: sh
+        run: |
+          echo "Output from custom job:"
+          echo "comments: ${{ needs.ask-now.outputs.comments }}"
+          echo "approvalInputValues: ${{ needs.ask-now.outputs.approvalInputValues }}"
+          echo "str_no_req_def: ${{fromJson(needs.ask-now.approvalInputValues).str_no_req_def}}"
+          echo "bool_req_def: ${{fromJson(needs.ask-now.approvalInputValues).bool_req_def}}"
+          echo "bool_no_req_def: ${{fromJson(needs.ask-now.approvalInputValues).bool_no_req_def}}"
+          echo "bool_no_req_no_def: ${{fromJson(needs.ask-now.approvalInputValues).bool_no_req_no_def}}"
+          echo "num_no_req_def: ${{fromJson(needs.ask-now.approvalInputValues).num_no_req_def}}"
+          echo "num_no_req_no_def: ${{fromJson(needs.ask-now.approvalInputValues).num_no_req_no_def}}"
+    needs: ask-now

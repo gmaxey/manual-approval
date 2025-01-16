@@ -211,17 +211,15 @@ func (k *Config) callback() error {
 		return fmt.Errorf("Unexpected approval status '%s'", approvalStatus)
 	}
 
-	//TODO: temporarily hard-coded input parameter values
-	if debug {
-		outputBytes, err := json.Marshal(map[string]string{"param1": "val1", "param2": "val2"})
-		if err != nil {
-			return err
-		}
-		err = writeAsOutput("approvalInputValues", outputBytes)
-		if err != nil {
-			return err
-		}
+	outputBytes, err := json.Marshal(parsedPayload["inputs"])
+	if err != nil {
+		return err
 	}
+	err = writeAsOutput("approvalInputValues", outputBytes)
+	if err != nil {
+		return err
+	}
+	debugf("Approval Input Values: '%s'\n", string(outputBytes))
 
 	err = writeAsOutput("comments", []byte(comments))
 	if err != nil {
@@ -371,6 +369,5 @@ func markdown(value string) string {
 	} else {
 		value = buf.String()
 	}
-
 	return value
 }

@@ -349,15 +349,16 @@ func Test_init(t *testing.T) {
 
 func Test_callback(t *testing.T) {
 	tests := []struct {
-		name             string
-		reqCheckFunc     func(req map[string]interface{})
-		respGenFunc      func() (*http.Response, error)
-		env              map[string]string
-		client           *MockHttpClient
-		statusInFile     string
-		commentsInOutput string
-		output           []string
-		err              string
+		name              string
+		reqCheckFunc      func(req map[string]interface{})
+		respGenFunc       func() (*http.Response, error)
+		env               map[string]string
+		client            *MockHttpClient
+		statusInFile      string
+		commentsInOutput  string
+		inputValsInOutput string
+		output            []string
+		err               string
 	}{
 		{
 			name: "success APPROVED",
@@ -380,10 +381,42 @@ func Test_callback(t *testing.T) {
 				"API_TOKEN":         "test",
 				"CLOUDBEES_STATUS":  "/tmp/test-status-out",
 				"CLOUDBEES_OUTPUTS": "/tmp/test-outputs",
+				"PAYLOAD":           "{\"status\":\"UPDATE_MANUAL_APPROVAL_STATUS_APPROVED\",\"comments\":\"test comments1\",\"userId\":\"123\",\"userName\":\"testUserName\",\"respondedOn\":\"2009-11-10T23:00:00Z\",\"inputs\": [{\"name\":\"reqBoolInput\",\"value\":true,\"is_default\":false},{\"name\":\"reqStrInput\",\"value\":\"strValue\",\"is_default\":false},{\"name\":\"reqNumInput\",\"value\":99.33,\"is_default\":false}]}",
+			},
+			statusInFile:      "{\"message\":\"Successfully changed workflow manual approval status\",\"status\":\"APPROVED\"}",
+			commentsInOutput:  "test comments1",
+			inputValsInOutput: "[{\"is_default\":false,\"name\":\"reqBoolInput\",\"value\":true},{\"is_default\":false,\"name\":\"reqStrInput\",\"value\":\"strValue\"},{\"is_default\":false,\"name\":\"reqNumInput\",\"value\":99.33}]",
+			output: []string{
+				"Approved by testUserName on 2009-11-10T23:00:00Z with comments:\ntest comments1\n",
+			},
+			err: "",
+		},
+		{
+			name: "success APPROVED - empty input values",
+			reqCheckFunc: func(req map[string]interface{}) {
+				require.Equal(t, "UPDATE_MANUAL_APPROVAL_STATUS_APPROVED", req["status"].(string))
+				require.Equal(t, "test comments1", req["comments"].(string))
+				require.Equal(t, "123", req["userId"].(string))
+				require.Equal(t, "testUserName", req["userName"].(string))
+				require.Equal(t, "2009-11-10T23:00:00Z", req["respondedOn"].(string))
+			},
+			respGenFunc: func() (*http.Response, error) {
+				return &http.Response{
+					StatusCode: 200,
+					Status:     "200 OK",
+					Body:       io.NopCloser(bytes.NewBufferString(`{}`)),
+				}, nil
+			},
+			env: map[string]string{
+				"URL":               "http://test.com",
+				"API_TOKEN":         "test",
+				"CLOUDBEES_STATUS":  "/tmp/test-status-out",
+				"CLOUDBEES_OUTPUTS": "/tmp/test-outputs",
 				"PAYLOAD":           "{\"status\":\"UPDATE_MANUAL_APPROVAL_STATUS_APPROVED\",\"comments\":\"test comments1\",\"userId\":\"123\",\"userName\":\"testUserName\",\"respondedOn\":\"2009-11-10T23:00:00Z\"}",
 			},
-			statusInFile:     "{\"message\":\"Successfully changed workflow manual approval status\",\"status\":\"APPROVED\"}",
-			commentsInOutput: "test comments1",
+			statusInFile:      "{\"message\":\"Successfully changed workflow manual approval status\",\"status\":\"APPROVED\"}",
+			commentsInOutput:  "test comments1",
+			inputValsInOutput: "null", // file should not be created, hence no values
 			output: []string{
 				"Approved by testUserName on 2009-11-10T23:00:00Z with comments:\ntest comments1\n",
 			},
@@ -538,6 +571,11 @@ func Test_callback(t *testing.T) {
 			} else {
 				require.Error(t, err)
 				require.Equal(t, tt.err, err.Error())
+			}
+			if tt.inputValsInOutput != "" {
+				out, ferr := os.ReadFile(tt.env["CLOUDBEES_OUTPUTS"] + "/approvalInputValues")
+				require.NoError(t, ferr)
+				require.Equal(t, tt.inputValsInOutput, string(out))
 			}
 			if tt.commentsInOutput != "" {
 				out, ferr := os.ReadFile(tt.env["CLOUDBEES_OUTPUTS"] + "/comments")
