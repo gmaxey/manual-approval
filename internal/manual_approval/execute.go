@@ -123,7 +123,7 @@ func (k *Config) init() error {
 	}
 
 	if inputs != "" {
-		body["inputs"] = inputs
+		body["approvalInputs"] = inputs
 	}
 
 	resp, err := k.post("/v1/workflows/approval", body)

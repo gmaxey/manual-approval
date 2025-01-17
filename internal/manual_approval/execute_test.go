@@ -16,6 +16,7 @@ import (
 var (
 	instructionsInput  = "***instruction***\n`instruction2`\n# instruction3\n## instruction4\n### instruction5\n\n> Blockquotes can contain multiple paragraphs\n>\n> Add a > on the blank lines between the paragraps.\n\n- Rirst item\n- Second Item\n- Third item \n  - Indented item\n  - Indented item\n- Fourth item"
 	instructionsOutput = "<p><em><strong>instruction</strong></em>\n<code>instruction2</code></p>\n<h1>instruction3</h1>\n<h2>instruction4</h2>\n<h3>instruction5</h3>\n<blockquote>\n<p>Blockquotes can contain multiple paragraphs</p>\n<p>Add a &gt; on the blank lines between the paragraps.</p>\n</blockquote>\n<ul>\n<li>Rirst item</li>\n<li>Second Item</li>\n<li>Third item\n<ul>\n<li>Indented item</li>\n<li>Indented item</li>\n</ul>\n</li>\n<li>Fourth item</li>\n</ul>\n"
+	approvalInputs     = "in1:\\n  type: string\\n  required: true\\n  description: One of the required approver inputs\\nin2:\\n  type: number\\n  description: a numeric input\\nin3:\\n  type: choice\\n  options:\\n    - op1\\n    - op2"
 )
 
 func init() {
@@ -125,6 +126,39 @@ func Test_init(t *testing.T) {
 				"CLOUDBEES_STATUS": "/tmp/test-status-out",
 				"APPROVERS":        "123,user@mail.com",
 				"INSTRUCTIONS":     instructionsInput,
+			},
+			output: []string{
+				"Waiting for approval from one of the following: testUserName\n",
+				"Instructions:\n<p><em><strong>instruction</strong></em>\n<code>instruction2</code></p>\n<h1>instruction3</h1>\n<h2>instruction4</h2>\n<h3>instruction5</h3>\n<blockquote>\n<p>Blockquotes can contain multiple paragraphs</p>\n<p>Add a &gt; on the blank lines between the paragraps.</p>\n</blockquote>\n<ul>\n<li>Rirst item</li>\n<li>Second Item</li>\n<li>Third item\n<ul>\n<li>Indented item</li>\n<li>Indented item</li>\n</ul>\n</li>\n<li>Fourth item</li>\n</ul>\n\n",
+			},
+			err: "",
+		},
+		{
+			name: "success with inputs",
+			reqCheckFunc: func(req map[string]interface{}) {
+				require.NotNil(t, req["approvers"])
+				require.Equal(t, []interface{}{"123", "user@mail.com"}, req["approvers"])
+				require.NotNil(t, req["instructions"])
+				require.Equal(t, instructionsInput, req["instructions"].(string))
+				require.NotNil(t, req["approvalInputs"])
+				require.Equal(t, approvalInputs, req["approvalInputs"].(string))
+				require.Equal(t, false, req["disallowLaunchedByUser"].(bool))
+				require.Equal(t, false, req["notifyEligibleUsers"].(bool))
+			},
+			respGenFunc: func() (*http.Response, error) {
+				return &http.Response{
+					StatusCode: 200,
+					Status:     "200 OK",
+					Body:       io.NopCloser(bytes.NewBufferString(`{"approvers":[{"userName": "testUserName", "userId": "123", "email": "user@mail.com"}]}`)),
+				}, nil
+			},
+			env: map[string]string{
+				"URL":              "http://test.com",
+				"API_TOKEN":        "test",
+				"CLOUDBEES_STATUS": "/tmp/test-status-out",
+				"APPROVERS":        "123,user@mail.com",
+				"INSTRUCTIONS":     instructionsInput,
+				"INPUTS":           approvalInputs,
 			},
 			output: []string{
 				"Waiting for approval from one of the following: testUserName\n",
