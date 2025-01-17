@@ -203,7 +203,7 @@ func (k *Config) callback() error {
 		jobStatus = "REJECTED"
 		k.Output.Printf("Rejected by %s on %s with comments:\n%s\n", approverUserName, respondedOn, comments)
 	default:
-		k.Output.Printf("ERROR: Unexpected approval status '%s'", approvalStatus)
+		k.Output.Printf("ERROR: Unexpected approval status '%s'\n", approvalStatus)
 		ferr := writeStatus("FAILED", fmt.Sprintf("Unexpected approval status '%s'", approvalStatus))
 		if ferr != nil {
 			return ferr
@@ -215,17 +215,54 @@ func (k *Config) callback() error {
 	if err != nil {
 		return err
 	}
+	outputData := string(outputBytes)
+	if outputData != "null" && outputData != "[]" {
+		k.Output.Printf("\n### Input Parameters:\n")
+		inputs := parsedPayload["inputs"].([]interface{})
+		k.Output.Printf("| Name          | Value            |\n")
+		k.Output.Printf("| --------------| -----------------|\n")
+		suffix := " (default)"
+		for _, input := range inputs {
+			ip := input.(map[string]interface{})
+			inputaVal := interfaceToString(ip["value"])
+			if ip["is_default"] == true {
+				inputaVal += suffix
+			}
+
+			k.Output.Printf("| **%s** | %s |\n",
+				ip["name"], inputaVal)
+		}
+	} else {
+		debugf("**No Parameters Defined**")
+	}
+
 	err = writeAsOutput("approvalInputValues", outputBytes)
 	if err != nil {
 		return err
 	}
-	debugf("Approval Input Values: '%s'\n", string(outputBytes))
+
+	debugf("Approval Input Values: '%s'\n", outputData)
 
 	err = writeAsOutput("comments", []byte(comments))
 	if err != nil {
 		return err
 	}
 	return writeStatus(jobStatus, "Successfully changed workflow manual approval status")
+}
+
+func interfaceToString(i interface{}) string {
+	switch v := i.(type) {
+	case string:
+		return v
+	case int:
+		return strconv.FormatInt(int64(v), 64)
+	case float64:
+		return strconv.FormatFloat(v, 'g', -1, 64)
+	case bool:
+		return strconv.FormatBool(v)
+	default:
+		return "unsupported type"
+	}
 }
 
 func (k *Config) cancel() error {
