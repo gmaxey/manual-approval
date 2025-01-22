@@ -489,8 +489,6 @@ func Test_callback(t *testing.T) {
 			commentsInOutput: "test comments2",
 			output: []string{
 				"Rejected by testUserName on 2009-11-10T23:00:00Z with comments:\ntest comments2\n",
-				// TODO: @Kushal, please fix this test case
-				// "<p><strong>No Parameters Defined</strong></p>\n\n",
 			},
 			err: "",
 		},
@@ -614,11 +612,13 @@ func Test_callback(t *testing.T) {
 				require.Error(t, err)
 				require.Equal(t, tt.err, err.Error())
 			}
+
 			if tt.inputValsInOutput != "" {
 				out, ferr := os.ReadFile(tt.env["CLOUDBEES_OUTPUTS"] + "/approvalInputValues")
 				require.NoError(t, ferr)
 				require.Equal(t, tt.inputValsInOutput, string(out))
 			}
+
 			if tt.commentsInOutput != "" {
 				out, ferr := os.ReadFile(tt.env["CLOUDBEES_OUTPUTS"] + "/comments")
 				require.NoError(t, ferr)
