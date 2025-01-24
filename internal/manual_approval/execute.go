@@ -184,6 +184,13 @@ func (k *Config) callback() error {
 	approverUserName := parsedPayload["userName"].(string)
 	debugf("Approver user name: '%s'\n", approverUserName)
 
+	// POST request expects input param values to be strings, so converting values to string
+	// Also, creating a map with input values in original type to be made available in outputs
+	modifiedInputsParamForPost, outputsMap, err4 := formatInputsForPost(parsedPayload)
+	if err4 != nil {
+		return err4
+	}
+
 	_, err = k.post("/v1/workflows/approval/status", parsedPayload)
 	if err != nil {
 		fmt.Printf("ERROR: API call failed with error: '%s'\n", err)
@@ -194,6 +201,101 @@ func (k *Config) callback() error {
 		return err
 	}
 
+	jobStatus, err2 := k.processApprovalStatus(approvalStatus, approverUserName, respondedOn, comments)
+	if err2 != nil {
+		return err2
+	}
+
+	// Add suffix for default vals and write to log
+	k.formatInputsValsAndWriteToLog(modifiedInputsParamForPost)
+
+	//
+	err3 := k.writeToOutputs(outputsMap, comments)
+	if err3 != nil {
+		return err3
+	}
+
+	return writeStatus(jobStatus, "Successfully changed workflow manual approval status")
+}
+
+/*
+* POST request expects input param values to be strings, so converting values
+* to string Also, creating a map with input values in original type to be made
+* available in outputs
+ */
+func formatInputsForPost(parsedPayload map[string]interface{}) ([]interface{}, map[string]interface{}, error) {
+	var modifiedInputsParamForPost []interface{}
+	outputsMap := make(map[string]interface{})
+
+	if parsedPayload["inputs"] != nil && len(parsedPayload["inputs"].([]interface{})) > 0 {
+
+		modifiedInputsParamForPost = parsedPayload["inputs"].([]interface{})
+
+		for _, input := range modifiedInputsParamForPost {
+			ip := input.(map[string]interface{})
+			// To print input param values in original type to outputs
+			outputsMap[ip["name"].(string)] = ip["value"]
+			// Converting param value to string type for POST request
+			inputVal := interfaceToString(ip["value"])
+			ip["value"] = inputVal
+		}
+		parsedPayload["inputs"] = modifiedInputsParamForPost
+
+		updtVal, err2 := json.Marshal(parsedPayload)
+		if err2 != nil {
+			fmt.Println("Invalid payload after converting input values to string:", err2)
+			return nil, nil, err2
+		}
+		debugf("Inputs for post request: '%s'\n", updtVal)
+	} else {
+		debugf("**No Input Parameters Defined**\n")
+	}
+
+	return modifiedInputsParamForPost, outputsMap, nil
+}
+
+func (k *Config) writeToOutputs(outputsMap map[string]interface{}, comments string) error {
+
+	if outputsMap != nil {
+		outputBytes, err := json.Marshal(outputsMap)
+		if err != nil {
+			return err
+		}
+		err = writeAsOutput("approvalInputValues", outputBytes)
+		if err != nil {
+			return err
+		}
+		debugf("Approval Input Values in outputs: '%s'\n", string(outputBytes))
+	}
+
+	err := writeAsOutput("comments", []byte(comments))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Add suffix if input param value is default value before writing it to callback handler logs
+func (k *Config) formatInputsValsAndWriteToLog(modifiedInputsParamForPost []interface{}) {
+	if len(modifiedInputsParamForPost) > 0 {
+		k.Output.Printf("\nInput Parameters:\n")
+		k.Output.Printf("| Name          | Value            |\n")
+		k.Output.Printf("| --------------| -----------------|\n")
+		suffix := " (default)"
+		for _, input := range modifiedInputsParamForPost {
+			ip := input.(map[string]interface{})
+			inputaVal := ip["value"].(string)
+			if ip["is_default"] == true {
+				inputaVal += suffix
+			}
+
+			k.Output.Printf("| %s | %s |\n",
+				ip["name"], inputaVal)
+		}
+	}
+}
+
+func (k *Config) processApprovalStatus(approvalStatus string, approverUserName string, respondedOn string, comments string) (string, error) {
 	var jobStatus string
 	switch approvalStatus {
 	case "UPDATE_MANUAL_APPROVAL_STATUS_APPROVED":
@@ -206,48 +308,11 @@ func (k *Config) callback() error {
 		k.Output.Printf("ERROR: Unexpected approval status '%s'\n", approvalStatus)
 		ferr := writeStatus("FAILED", fmt.Sprintf("Unexpected approval status '%s'", approvalStatus))
 		if ferr != nil {
-			return ferr
+			return "", ferr
 		}
-		return fmt.Errorf("Unexpected approval status '%s'", approvalStatus)
+		return "", fmt.Errorf("Unexpected approval status '%s'", approvalStatus)
 	}
-
-	outputBytes, err := json.Marshal(parsedPayload["inputs"])
-	if err != nil {
-		return err
-	}
-	outputData := string(outputBytes)
-	if outputData != "null" && outputData != "[]" {
-		k.Output.Printf("\n### Input Parameters:\n")
-		inputs := parsedPayload["inputs"].([]interface{})
-		k.Output.Printf("| Name          | Value            |\n")
-		k.Output.Printf("| --------------| -----------------|\n")
-		suffix := " (default)"
-		for _, input := range inputs {
-			ip := input.(map[string]interface{})
-			inputaVal := interfaceToString(ip["value"])
-			if ip["is_default"] == true {
-				inputaVal += suffix
-			}
-
-			k.Output.Printf("| **%s** | %s |\n",
-				ip["name"], inputaVal)
-		}
-	} else {
-		debugf("**No Parameters Defined**")
-	}
-
-	err = writeAsOutput("approvalInputValues", outputBytes)
-	if err != nil {
-		return err
-	}
-
-	debugf("Approval Input Values: '%s'\n", outputData)
-
-	err = writeAsOutput("comments", []byte(comments))
-	if err != nil {
-		return err
-	}
-	return writeStatus(jobStatus, "Successfully changed workflow manual approval status")
+	return jobStatus, nil
 }
 
 func interfaceToString(i interface{}) string {
