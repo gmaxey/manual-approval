@@ -279,18 +279,18 @@ func (k *Config) writeToOutputs(outputsMap map[string]interface{}, comments stri
 func (k *Config) formatInputsValsAndWriteToLog(modifiedInputsParamForPost []interface{}) {
 	if len(modifiedInputsParamForPost) > 0 {
 		k.Output.Printf("\nInput Parameters:\n")
-		k.Output.Printf("| Name          | Value            |\n")
-		k.Output.Printf("| --------------| -----------------|\n")
+		k.Output.Printf("------------------\n")
 		suffix := " (default)"
 		for _, input := range modifiedInputsParamForPost {
 			ip := input.(map[string]interface{})
-			inputaVal := ip["value"].(string)
+			inputVal := ip["value"].(string)
+			inputVal = strings.Replace(inputVal, "\n", "<br/>", -1) // replace /n with <br> for html rendering
 			if ip["is_default"] == true {
-				inputaVal += suffix
+				inputVal += suffix
 			}
 
-			k.Output.Printf("| %s | %s |\n",
-				ip["name"], inputaVal)
+			k.Output.Printf(" %s: %s \n",
+				ip["name"], inputVal)
 		}
 	}
 }
