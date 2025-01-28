@@ -298,7 +298,7 @@ func Test_init(t *testing.T) {
 				return &http.Response{
 					StatusCode: 500,
 					Status:     "500 Internal Server Error",
-					Body:       io.NopCloser(bytes.NewBufferString(`{"approvers":[{"userName": "testUserName", "userId": "123", "email": "user@mail.com"}]}`)),
+					Body:       io.NopCloser(bytes.NewBufferString(`wrong parameter`)),
 				}, nil
 			},
 			env: map[string]string{
@@ -310,6 +310,7 @@ func Test_init(t *testing.T) {
 			},
 			output: []string{
 				"ERROR: API call failed with error: 'failed to send event: \nPOST http://test.com/v1/workflows/approval\nHTTP/500 500 Internal Server Error\n'\n",
+				"ERROR: API response: 'wrong parameter'\n",
 			},
 			err: "failed to send event: \nPOST http://test.com/v1/workflows/approval\nHTTP/500 500 Internal Server Error\n",
 		},
@@ -533,7 +534,7 @@ func Test_callback(t *testing.T) {
 				return &http.Response{
 					StatusCode: 500,
 					Status:     "500 Internal Server Error",
-					Body:       io.NopCloser(bytes.NewBufferString(`{}`)),
+					Body:       io.NopCloser(bytes.NewBufferString(`wrong parameter`)),
 				}, nil
 			},
 			env: map[string]string{
@@ -543,8 +544,11 @@ func Test_callback(t *testing.T) {
 				"PAYLOAD":          "{\"status\":\"UPDATE_MANUAL_APPROVAL_STATUS_APPROVED\",\"comments\":\"test comments\",\"userId\":\"123\",\"userName\":\"testUserName\",\"respondedOn\":\"2009-11-10T23:00:00Z\"}",
 			},
 			statusInFile: "{\"message\":\"Failed to change workflow manual approval status: 'failed to send event: \\nPOST http://test.com/v1/workflows/approval/status\\nHTTP/500 500 Internal Server Error\\n'\",\"status\":\"FAILED\"}",
-			output:       nil,
-			err:          "failed to send event: \nPOST http://test.com/v1/workflows/approval/status\nHTTP/500 500 Internal Server Error\n",
+			output: []string{
+				"ERROR: API call failed with error: 'failed to send event: \nPOST http://test.com/v1/workflows/approval/status\nHTTP/500 500 Internal Server Error\n'\n",
+				"ERROR: API response: 'wrong parameter'\n",
+			},
+			err: "failed to send event: \nPOST http://test.com/v1/workflows/approval/status\nHTTP/500 500 Internal Server Error\n",
 		},
 	}
 	for _, tt := range tests {
@@ -702,7 +706,7 @@ func Test_cancel(t *testing.T) {
 				return &http.Response{
 					StatusCode: 500,
 					Status:     "500 Internal Server Error",
-					Body:       io.NopCloser(bytes.NewBufferString(`{}`)),
+					Body:       io.NopCloser(bytes.NewBufferString(`wrong parameter`)),
 				}, nil
 			},
 			env: map[string]string{
@@ -714,6 +718,7 @@ func Test_cancel(t *testing.T) {
 				"Workflow timed out\n",
 				"Workflow approval response was not received within allotted time.\n",
 				"ERROR: API call failed with error: 'failed to send event: \nPOST http://test.com/v1/workflows/approval/status\nHTTP/500 500 Internal Server Error\n'\n",
+				"ERROR: API response: 'wrong parameter'\n",
 			},
 			err: "failed to send event: \nPOST http://test.com/v1/workflows/approval/status\nHTTP/500 500 Internal Server Error\n",
 		},

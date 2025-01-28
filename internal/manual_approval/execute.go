@@ -129,12 +129,14 @@ func (k *Config) init() error {
 	resp, err := k.post("/v1/workflows/approval", body)
 	if err != nil {
 		k.Output.Printf("ERROR: API call failed with error: '%s'\n", err)
+		k.Output.Printf("ERROR: API response: '%s'\n", resp)
 		ferr := writeStatus("FAILED", fmt.Sprintf("Failed to initialize workflow manual approval request: '%s'", err))
 		if ferr != nil {
 			return ferr
 		}
 		return err
 	}
+	debugf("Response: '%s'\n", resp)
 
 	//get the names of potential approvers from the response
 	parsedResp := CreateManualApprovalResponse{}
@@ -191,15 +193,17 @@ func (k *Config) callback() error {
 		return err4
 	}
 
-	_, err = k.post("/v1/workflows/approval/status", parsedPayload)
+	resp, err := k.post("/v1/workflows/approval/status", parsedPayload)
 	if err != nil {
-		fmt.Printf("ERROR: API call failed with error: '%s'\n", err)
+		k.Output.Printf("ERROR: API call failed with error: '%s'\n", err)
+		k.Output.Printf("ERROR: API response: '%s'\n", resp)
 		ferr := writeStatus("FAILED", fmt.Sprintf("Failed to change workflow manual approval status: '%s'", err))
 		if ferr != nil {
 			return ferr
 		}
 		return err
 	}
+	debugf("Response: '%s'\n", resp)
 
 	jobStatus, err2 := k.processApprovalStatus(approvalStatus, approverUserName, respondedOn, comments)
 	if err2 != nil {
@@ -353,10 +357,11 @@ func (k *Config) cancel() error {
 	resp, err := k.post("/v1/workflows/approval/status", body)
 	if err != nil {
 		k.Output.Printf("ERROR: API call failed with error: '%s'\n", err)
+		k.Output.Printf("ERROR: API response: '%s'\n", resp)
 		return err
 	}
-
 	debugf("Response: '%s'\n", resp)
+
 	return nil
 }
 
