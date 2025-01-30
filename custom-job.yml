@@ -34,7 +34,7 @@ outputs:
     value: ${{ handlers.callback.outputs.comments }}
 handlers:
   init:
-    uses: docker://public.ecr.aws/l7o7z1g8/custom-jobs/manual-approval:e079e5690d1b2631db337817486d463a8f56f46e
+    uses: docker://public.ecr.aws/l7o7z1g8/custom-jobs/manual-approval:fab4b4da8be426678a08dd238359dead6f64b423
     command: /usr/local/bin/manual-approval
     args: --handler "init"
     env:
@@ -48,7 +48,7 @@ handlers:
       DEBUG: ${{ inputs.debug }}
 
   callback:
-    uses: docker://public.ecr.aws/l7o7z1g8/custom-jobs/manual-approval:e079e5690d1b2631db337817486d463a8f56f46e
+    uses: docker://public.ecr.aws/l7o7z1g8/custom-jobs/manual-approval:fab4b4da8be426678a08dd238359dead6f64b423
     command: /usr/local/bin/manual-approval
     args: --handler "callback"
     env:
@@ -58,7 +58,7 @@ handlers:
       DEBUG: ${{ inputs.debug }}
 
   cancel:
-    uses: docker://public.ecr.aws/l7o7z1g8/custom-jobs/manual-approval:e079e5690d1b2631db337817486d463a8f56f46e
+    uses: docker://public.ecr.aws/l7o7z1g8/custom-jobs/manual-approval:fab4b4da8be426678a08dd238359dead6f64b423
     command: /usr/local/bin/manual-approval
     args: --handler "cancel"
     env:
