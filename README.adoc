@@ -17,6 +17,11 @@ Refer to the link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/work
 .^| Required?
 .^| Description
 
+.^| `approvalInputs`
+.^| String, Boolean, Choice, Number
+.^| No
+| The input parameters for workflow approvers. Use the parameter name to access the `output` of `approvalInputs` in subsequent steps.
+
 .^| `approvers`
 .^| String
 .^|No
@@ -65,13 +70,57 @@ In your YAML file, add:
 
 [source,yaml]
 ----
- workflow-approval-name:
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: workflow
+name: Workflow example
+on:
+  push:
+    branches:
+      - "**"
+  workflow_dispatch:
+jobs:
+  build:
+    steps:
+      - uses: docker://golang:1.20.3-alpine3.17
+        name: Say hello
+        kind: test
+        shell: sh
+        run: |
+          echo "hello world"
+    needs: build-approval
+  build-approval:
+    with:
+      approvers: de39a936-7a04-11ec-81d0-42010a83ae75
+      disallowLaunchByUser: false
+      instructions: ""
+      approvalInputs: |
+        string-value:
+          type: string
+        retry-count:
+          type: number
+        boolean:
+          type: boolean
+          default: false
+        Picklist:
+          type: choice
+          options:
+            - abc
+            - xyz
     timeout-minutes: 4320
     delegates: cloudbees-io/manual-approval/custom-job.yml@v1
-    with:
-      approvers:
-      disallowLaunchByUser: false
-      instructions: "Enter instructive text for approvers here. "
+  use-approval-parameters:
+    needs:
+      - build-approval
+    steps:
+      - uses: docker://golang:1.20.3-alpine3.17
+        name: Echo string input
+        shell: sh
+        run: |
+          echo '${{ fromJSON(needs.build-approval.outputs.approvalInputValues).string-value }}'
+          echo '${{ fromJSON(needs.build-approval.outputs.approvalInputValues).retry-count }}'
+          echo '${{ fromJSON(needs.build-approval.outputs.approvalInputValues).boolean }}'
+          echo '${{ fromJSON(needs.build-approval.outputs.approvalInputValues).Picklist }}'
+
 
 ----
 
