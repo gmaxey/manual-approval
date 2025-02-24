@@ -70,6 +70,7 @@ In your YAML file, add:
 
 [source,yaml]
 ----
+
 apiVersion: automation.cloudbees.io/v1alpha1
 kind: workflow
 name: Workflow example
@@ -90,7 +91,7 @@ jobs:
     needs: build-approval
   build-approval:
     with:
-      approvers: de39a936-7a04-11ec-81d0-42010a83ae75
+      approvers: d39a936-7a04-11ec-81d0-42010a83ae75
       disallowLaunchByUser: false
       instructions: ""
       approvalInputs: |
@@ -109,18 +110,21 @@ jobs:
     timeout-minutes: 4320
     delegates: cloudbees-io/manual-approval/custom-job.yml@v1
   use-approval-parameters:
-    needs:
-      - build-approval
-    steps:
-      - uses: docker://golang:1.20.3-alpine3.17
-        name: Echo string input
-        shell: sh
-        run: |
-          echo '${{ fromJSON(needs.build-approval.outputs.approvalInputValues).string-value }}'
-          echo '${{ fromJSON(needs.build-approval.outputs.approvalInputValues).retry-count }}'
-          echo '${{ fromJSON(needs.build-approval.outputs.approvalInputValues).boolean }}'
-          echo '${{ fromJSON(needs.build-approval.outputs.approvalInputValues).Picklist }}'
-
+      needs:
+        - build-approval
+      steps:
+        - uses: docker://golang:1.20.3-alpine3.17
+          name: Echo inputs
+          shell: sh
+          run: |
+            echo "${{ fromJSON(needs.User-input.outputs.approvalInputValues).string-value }}"
+            echo "${{ fromJSON(needs.User-input.outputs.approvalInputValues).retry-count }}"
+            echo "${{ fromJSON(needs.User-input.outputs.approvalInputValues).boolean }}"
+            echo "${{ fromJSON(needs.User-input.outputs.approvalInputValues).Picklist }}"
+  
+            echo "\
+            Comments:
+            ${{needs.User-input.outputs.comments}}"
 
 ----
 
