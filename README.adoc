@@ -20,7 +20,14 @@ Refer to the link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/work
 .^| `approvalInputs`
 .^| String, Boolean, Choice, Number
 .^| No
-| The input parameters for workflow approvers. Use the parameter name to access the `output` of `approvalInputs` in subsequent steps.
+| The input parameters for workflow approvers. Valid parameter types: `string`, `number`, `boolean` and `choice`.
+
+
+These approval parameter input values can be accessed in subsequent jobs using the `outputs` context. For example, to return in JSON format:
+
+* All parameter input values provided by a workflow approver use: `needs` syntax of `${{needs.<approvalJobName>.outputs.approvalInputValues}}`
+
+* A specific approval parameter input value use:  `${{ fromJSON(needs.<approvalJobName>.outputs.approvalInputValues).<parameterName> }}`.
 
 .^| `approvers`
 .^| String
