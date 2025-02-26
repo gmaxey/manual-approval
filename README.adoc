@@ -139,5 +139,5 @@ link:https://opensource.org/license/mit/[MIT license].
 
 == References
 
-* Learn more about link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/workflows/manage-workflows#edit-manual-approval-job[Configure a manual approval job].
+* Learn more about link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/workflows/manage-workflows#edit-manual-approval-job[Manual approval].
 * Learn about link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/[the CloudBees platform].
