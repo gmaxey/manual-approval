@@ -26,7 +26,7 @@ These approval parameter input values can be accessed in subsequent jobs using t
 
 * All parameter input values provided by a workflow approver in JSON format use: `needs` syntax of `${{needs.<jobName>.outputs.approvalInputValues}}`
 
-* A specific approval parameter input value use: `${{ fromJSON(needs.<approval_job_name>.outputs.approvalInputValues).<parameter_name>}}`
+* A specific approval parameter input value use: `${{ fromJSON(needs.<approval_job_name>.outputs.approvalInputValues).<parameter_name>}}`.
 
 .^| `approvers`
 .^| String
