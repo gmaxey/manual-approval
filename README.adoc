@@ -22,12 +22,11 @@ Refer to the link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/work
 .^| No
 | The input parameters for workflow approvers. Valid parameter types: `string`, `number`, `boolean` and `choice`.
 
+These approval parameter input values can be accessed in subsequent jobs using the outputs context. For example, to return:
 
-These approval parameter input values can be accessed in subsequent jobs using the `outputs` context. For example, to return in JSON format:
+* All parameter input values provided by a workflow approver in JSON format use: needs syntax of `${{needs..outputs.approvalInputValues}}`
 
-* All parameter input values provided by a workflow approver use: `needs` syntax of `${{needs.<approvalJobName>.outputs.approvalInputValues}}`
-
-* A specific approval parameter input value use:  `${{ fromJSON(needs.<approvalJobName>.outputs.approvalInputValues).<parameterName> }}`.
+* A specific approval parameter input value use: `${{ fromJSON(needs..outputs.approvalInputValues). }}`.
 
 .^| `approvers`
 .^| String
@@ -77,14 +76,10 @@ In your YAML file, add:
 
 [source,yaml]
 ----
-
 apiVersion: automation.cloudbees.io/v1alpha1
 kind: workflow
 name: Workflow example
 on:
-  push:
-    branches:
-      - "**"
   workflow_dispatch:
 jobs:
   build:
@@ -98,9 +93,9 @@ jobs:
     needs: build-approval
   build-approval:
     with:
-      approvers: d39a936-7a04-11ec-81d0-42010a83ae75
+      approvers: ""
       disallowLaunchByUser: false
-      instructions: ""
+      instructions: "Please provide inputs"
       approvalInputs: |
         string-value:
           type: string
@@ -124,14 +119,14 @@ jobs:
           name: Echo inputs
           shell: sh
           run: |
-            echo "${{ fromJSON(needs.User-input.outputs.approvalInputValues).string-value }}"
-            echo "${{ fromJSON(needs.User-input.outputs.approvalInputValues).retry-count }}"
-            echo "${{ fromJSON(needs.User-input.outputs.approvalInputValues).boolean }}"
-            echo "${{ fromJSON(needs.User-input.outputs.approvalInputValues).Picklist }}"
-  
+            echo "string-value: ${{ fromJSON(needs.build-approval.outputs.approvalInputValues).string-value }}"
+            echo "retry-count: ${{ fromJSON(needs.build-approval.outputs.approvalInputValues).retry-count }}"
+            echo "boolean: ${{ fromJSON(needs.build-approval.outputs.approvalInputValues).boolean }}"
+            echo "Picklist: ${{ fromJSON(needs.build-approval.outputs.approvalInputValues).Picklist }}"
+
             echo "\
             Comments:
-            ${{needs.User-input.outputs.comments}}"
+            ${{needs.build-approval.outputs.comments}}"
 
 ----
 
