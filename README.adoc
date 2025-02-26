@@ -17,10 +17,33 @@ Refer to the link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/work
 .^| Required?
 .^| Description
 
+.^| `approvalInputs`
+.^| String, Boolean, Choice, Number
+.^| No
+| The input parameters for workflow approvers. Valid parameter types: `string`, `number`, `boolean` and `choice`.
+
+These approval parameter input values can be accessed in subsequent jobs using the outputs context. For example, to return:
+
+* All parameter input values provided by a workflow approver in JSON format use: `needs` syntax of `${{needs.<approval_job_name>.outputs.approvalInputValues).<parameter_name>}}`.
+
+* A specific approval parameter input value use: `${{ fromJSON(needs.<approval_job_name>.outputs.approvalInputValues).<parameter_name>}}`.
+
+
 .^| `approvers`
 .^| String
 .^|No
 | A list of users whose participation in the workflow approval process is requested. The `approvers` field supports both user IDs and email addresses.
+
+Approval rules and notifications are as follows:
+
+* If approvers are specified, then
+** Only listed approvers will receive email notification.
+** Only listed approvers can participate in approval process.
+
+* If approvers are not specified, then
+
+** Only the workflow initiator will receive email notification.
+** All eligible users can participate in approval process.
 
 .^| `delegates`
 .^|String
@@ -41,29 +64,6 @@ Refer to the link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/work
 * In the approval response request email notification.
 * On workflow run details screen.
 
-.^| `notifyAllEligibleUsers`
-.^|String
-.^| No
-| Use to notify all users who have the execute approval permission on the workflow when no approvers  are listed
-by selecting *Notify all eligible users*. Default value is `false`.
-
-Notifications will be sent as follows:
-
-* If users are listed in *Approvers* and *Notify all eligible users* is true or false, then
-** Only listed approvers will receive notification.
-** Only listed approvers can participate in approval process.
-
-* If *Approvers* is blank and *Notify all eligible users* is false, then
-
-** No notifications will be sent.
-** All eligible users can participate in approval process.
-
-* If *Approvers* is blank and *Notify all eligible users* is true, then
-
-** The CloudBees platform will select and notify up to 10 eligible users.
-
-** All eligible users can participate in approval process.
-
 .^| `timeout-minutes`
 .^| Integer
 .^| No
@@ -77,14 +77,57 @@ In your YAML file, add:
 
 [source,yaml]
 ----
- workflow-approval-name:
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: workflow
+name: Workflow example
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    steps:
+      - uses: docker://golang:1.20.3-alpine3.17
+        name: Say hello
+        kind: test
+        shell: sh
+        run: |
+          echo "hello world"
+    needs: build-approval
+  build-approval:
+    with:
+      approvers: ""
+      disallowLaunchByUser: false
+      instructions: "Please provide inputs"
+      approvalInputs: |
+        string-value:
+          type: string
+        retry-count:
+          type: number
+        boolean:
+          type: boolean
+          default: false
+        Picklist:
+          type: choice
+          options:
+            - abc
+            - xyz
     timeout-minutes: 4320
     delegates: cloudbees-io/manual-approval/custom-job.yml@v1
-    with:
-      approvers:
-      disallowLaunchByUser: false
-      instructions: "Enter instructive text for approvers here. "
+  use-approval-parameters:
+      needs:
+        - build-approval
+      steps:
+        - uses: docker://golang:1.20.3-alpine3.17
+          name: Echo inputs
+          shell: sh
+          run: |
+            echo "string-value: ${{ fromJSON(needs.build-approval.outputs.approvalInputValues).string-value }}"
+            echo "retry-count: ${{ fromJSON(needs.build-approval.outputs.approvalInputValues).retry-count }}"
+            echo "boolean: ${{ fromJSON(needs.build-approval.outputs.approvalInputValues).boolean }}"
+            echo "Picklist: ${{ fromJSON(needs.build-approval.outputs.approvalInputValues).Picklist }}"
 
+          echo "\
+            Comments:
+            ${{ fromJSON(needs.build-approval.outputs.approvalInputValues).string-value }}"
 ----
 
 NOTE: For more information 
@@ -96,5 +139,5 @@ link:https://opensource.org/license/mit/[MIT license].
 
 == References
 
-* Learn more about link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/actions[using actions in CloudBees workflows].
+* Learn more about link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/custom-jobs/manual-approval[Manual approval].
 * Learn about link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/[the CloudBees platform].
