@@ -124,10 +124,9 @@ jobs:
             echo "boolean: ${{ fromJSON(needs.build-approval.outputs.approvalInputValues).boolean }}"
             echo "Picklist: ${{ fromJSON(needs.build-approval.outputs.approvalInputValues).Picklist }}"
 
-            echo "\
+          echo "\
             Comments:
-            ${{needs.build-approval.outputs.comments}}"
-
+            ${{ fromJSON(needs.build-approval.outputs.approvalInputValues).string-value }}"
 ----
 
 NOTE: For more information 
@@ -139,5 +138,5 @@ link:https://opensource.org/license/mit/[MIT license].
 
 == References
 
-* Learn more about link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/actions[using actions in CloudBees workflows].
+* Learn more about link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/workflows/manage-workflows#edit-manual-approval-job[Configure a manual approval job].
 * Learn about link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/[the CloudBees platform].
