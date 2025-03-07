@@ -25,13 +25,6 @@ inputs:
     description: Set to true to enable debug logging.
     default: false
     required: false
-outputs:
-  approvalInputValues:
-    description: Input parameter values provided by the user when approving the manual approval request.
-    value: ${{ handlers.callback.outputs.approvalInputValues }}
-  comments:
-    description: The approver's comments
-    value: ${{ handlers.callback.outputs.comments }}
 handlers:
   init:
     uses: docker://public.ecr.aws/l7o7z1g8/custom-jobs/manual-approval:fab4b4da8be426678a08dd238359dead6f64b423
